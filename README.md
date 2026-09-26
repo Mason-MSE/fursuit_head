@@ -15,24 +15,30 @@
 
 ---
 
+> **⚠️ Sections 2 and 3 are an unfilled template.** Every `[ ... ]` placeholder must be completed before this README is published or presented externally. Nothing in those sections is currently populated, and no brand claim, metric, follower count, award or partnership in this repository should be invented to fill a gap.
+
+---
+
 ## Table of Contents
 
 - [1. Overview](#1-overview)
-- [2. Tech Stack](#2-tech-stack)
-- [3. Repository Layout](#3-repository-layout)
-- [4. Quick Start](#4-quick-start)
-- [5. Environment Variables](#5-environment-variables)
-- [6. Seed Data and Default Accounts](#6-seed-data-and-default-accounts)
-- [7. API Reference](#7-api-reference)
-- [8. RBAC Model](#8-rbac-model)
-- [9. Business State Machines](#9-business-state-machines)
-- [10. Frontend Applications](#10-frontend-applications)
-- [11. Testing](#11-testing)
-- [12. Security and Operations](#12-security-and-operations)
-- [13. Known Issues](#13-known-issues)
-- [14. Three-Phase Roadmap](#14-three-phase-roadmap)
-- [15. Legal and Cultural Compliance](#15-legal-and-cultural-compliance)
-- [16. License](#16-license)
+- [2. Brand and Personal IP](#2-brand-and-personal-ip)
+- [3. Brand and IP Operations Playbook](#3-brand-and-ip-operations-playbook)
+- [4. Tech Stack](#4-tech-stack)
+- [5. Repository Layout](#5-repository-layout)
+- [6. Quick Start](#6-quick-start)
+- [7. Environment Variables](#7-environment-variables)
+- [8. Seed Data and Default Accounts](#8-seed-data-and-default-accounts)
+- [9. API Reference](#9-api-reference)
+- [10. RBAC Model](#10-rbac-model)
+- [11. Business State Machines](#11-business-state-machines)
+- [12. Frontend Applications](#12-frontend-applications)
+- [13. Testing](#13-testing)
+- [14. Security and Operations](#14-security-and-operations)
+- [15. Known Issues](#15-known-issues)
+- [16. Three-Phase Roadmap](#16-three-phase-roadmap)
+- [17. Legal and Cultural Compliance](#17-legal-and-cultural-compliance)
+- [18. License](#18-license)
 
 ---
 
@@ -52,7 +58,322 @@ Also included: **repair, refurbishment and replaceable-parts** services, plus **
 
 ---
 
-## 2. Tech Stack
+## 2. Brand and Personal IP
+
+*Audience: customers, collaborators and investors. This section answers "whose platform is this and why does it exist." Complete every placeholder before publishing.*
+
+### 2.1 Brand at a glance
+
+| Field | Value |
+| --- | --- |
+| Brand name | `[ brand name ]` |
+| One-line positioning | `[ e.g. "Hand-built kemonomimi heads, made in Aotearoa New Zealand" ]` |
+| Tagline | `[ tagline ]` |
+| Legal entity | `[ entity name / NZBN ]` |
+| Founded | `[ YYYY ]` |
+| Location | `[ city, NZ ]` |
+| Primary market | `[ NZ ]` |
+| Secondary markets | `[ e.g. AU, US, EU, JP ]` |
+| Primary language | `[ e.g. English ]` |
+| Māori language support | `[ e.g. te reo Māori place names and copy, reviewed ]` |
+| Storefront URL | `[ https://... ]` |
+| Admin URL | `[ internal only ]` |
+| Status | `[ pre-launch / live since YYYY-MM ]` |
+
+### 2.2 Positioning
+
+**Positioning statement** — complete the sentence:
+
+> For `[ target customer ]` who `[ need / want ]`, `[ brand name ]` is the `[ category ]` that `[ key benefit ]`, because `[ reason to believe / proof ]`.
+
+**Differentiation pillars** — pick and substantiate the three that are genuinely true:
+
+| Pillar | Claim | Proof we can actually show |
+| --- | --- | --- |
+| `[ e.g. Local craft ]` | `[ claim ]` | `[ studio, maker, materials, process ]` |
+| `[ e.g. Cultural respect ]` | `[ claim ]` | `[ cultural review process, Te Ao Māori partnership ]` |
+| `[ e.g. Transparent commissioning ]` | `[ claim ]` | `[ stage approvals, deposit protection, timeline visibility ]` |
+| `[ placeholder ]` | `[ claim ]` | `[ proof ]` |
+
+> Every pillar needs evidence. A claim without a substantiating artefact is a liability, especially in a market where cultural respect is claimed by many brands.
+
+**Brand voice** — define once, apply everywhere:
+
+| Dimension | We are | We are not |
+| --- | --- | --- |
+| Tone | `[ e.g. warm, precise, unhurried ]` | `[ e.g. hype-driven, dismissive of craft ]` |
+| Vocabulary | `[ preferred terms ]` | `[ banned or discouraged terms ]` |
+| Person | `[ first person plural / singular ]` | `[ ... ]` |
+| Reading level | `[ ... ]` | `[ ... ]` |
+| Cultural language | `[ how Māori terms are used and by whom ]` | `[ ... ]` |
+
+**Visual identity**
+
+| Asset | Specification | Location |
+| --- | --- | --- |
+| Primary logo | `[ SVG, clear space, minimum size ]` | `[ path or URL ]` |
+| Mark / icon | `[ ... ]` | `[ ... ]` |
+| Colour palette | `[ hex values, primary / secondary / accent ]` | `[ ... ]` |
+| Typography | `[ family, weights, licence ]` | `[ ... ]` |
+| Photography direction | `[ lighting, background, styling ]` | `[ ... ]` |
+| Packaging | `[ materials, unboxing ]` | `[ ... ]` |
+| Motion / audio | `[ if any ]` | `[ ... ]` |
+
+### 2.3 Audience segments
+
+| Segment | Need | Entry product | Content that reaches them | Platform path |
+| --- | --- | --- | --- | --- |
+| Ready-to-ship buyer | `[ ... ]` | `[ ... ]` | `[ ... ]` | Product → Cart → Order |
+| Made-to-order buyer | `[ ... ]` | `[ ... ]` | `[ ... ]` | Configure → Order |
+| Full-commission client | `[ ... ]` | `[ ... ]` | `[ ... ]` | Application → Screening → Quote → Deposit → Production |
+| Collector / fandom community | `[ ... ]` | `[ ... ]` | `[ ... ]` | Newsletter, social, CMS pages |
+| Gift buyer | `[ ... ]` | `[ ... ]` | `[ ... ]` | Product → Cart → Order |
+| Collaborator / maker | `[ ... ]` | `[ ... ]` | `[ ... ]` | Admin, `maker` role |
+
+### 2.4 Product and service architecture
+
+| Line | Positioning | Price band | Lead time | Configurable options | Capacity model |
+| --- | --- | --- | --- | --- | --- |
+| Ready to Ship | `[ ... ]` | `[ NZD ... ]` | `[ ... ]` | `[ size, species, finish ]` | Stock (`stock_movements`) |
+| Made to Order | `[ ... ]` | `[ NZD ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Full Commission | `[ ... ]` | `[ from NZD ... ]` | `[ ... ]` | Fully bespoke | `commission_config.max_slots` / waitlist |
+| Repair / refurbishment | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Replaceable parts | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+
+### 2.5 Personal IP
+
+*Fill this in only with verifiable facts. If the IP is a real, identifiable person, obtain their written consent before publishing biographical details.*
+
+| Field | Value |
+| --- | --- |
+| IP / persona name | `[ name or alias ]` |
+| Real name disclosure | `[ public / partial / not disclosed ]` |
+| Role on the platform | `[ e.g. founder, lead maker, cultural reviewer ]` |
+| Located | `[ ... ]` |
+| Started building | `[ YYYY ]` |
+| Consent to be featured | `[ obtained YYYY-MM-DD / pending ]` |
+
+**Narrative arc** — the three-beat structure used across every intro video, About page and conference bio:
+
+1. **Origin** — `[ what drew them to fursuit making ]`
+2. **Craft** — `[ what they are known for, technique, standards ]`
+3. **Purpose** — `[ what the brand is trying to change or preserve ]`
+
+**Content pillars** — the recurring formats that make the IP recognisable:
+
+| Pillar | Format | Cadence | Where it lives | Funnel destination |
+| --- | --- | --- | --- | --- |
+| Process / timelapse | `[ video ]` | `[ ... ]` | `[ ... ]` | Commission application |
+| Work in progress | `[ photo set, stories ]` | `[ ... ]` | `[ ... ]` | Newsletter |
+| Tutorial / technique | `[ long-form ]` | `[ ... ]` | `[ ... ]` | Community |
+| Behind the scenes | `[ studio, failures, repairs ]` | `[ ... ]` | `[ ... ]` | Brand trust |
+| Customer stories | `[ interview ]` | `[ with consent only ]` | `[ ... ]` | Commission application |
+| Cultural / te ao | `[ ... ]` | `[ with cultural reviewer approval ]` | `[ ... ]` | Trust |
+| Q&A / live | `[ ... ]` | `[ ... ]` | `[ ... ]` | Community |
+
+**Editorial guardrails** — non-negotiable, mirroring the code's own controls:
+
+- Never auto-generate or publish Māori cultural patterns, motifs or names without `cultural_reviewer` sign-off. The platform enforces this for commissions (`cultural_decision` gate before `approved_for_quote`); the same rule applies to marketing.
+- Never publish a customer's commission, likeness or measurements without written, time-boxed, revocable consent. See [3.4](#34-customer-content-consent).
+- Never present the personal IP's opinion as cultural endorsement. Personal voice and institutional position stay distinct.
+- Never publish unreviewed pricing, lead times or availability that contradict `commission_config`.
+- Never store or display full payment card details, in content or in the platform. See [17](#17-legal-and-cultural-compliance).
+
+### 2.6 Channel and social matrix
+
+| Channel | Handle | Content type | Cadence | Owner | Funnel destination |
+| --- | --- | --- | --- | --- | --- |
+| Instagram | `[ @ ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| TikTok | `[ @ ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| YouTube | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Facebook | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Pinterest | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Reddit / Discord | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Newsletter | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Conventions / markets | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+
+### 2.7 Monetisation flywheel
+
+```
+        ┌──────────────────────────────────────────────┐
+        │                                              │
+   Content  ──►  Audience  ──►  Commission enquiry  ──►  Platform order
+   (IP)          (trust)         (intent)               (revenue)
+        ▲                                                  │
+        │                                                  ▼
+        └────────  UGC, reviews, referrals  ◄──  Delivery + milestone reveals
+                        (compounding proof)
+```
+
+Each stage is instrumented:
+
+| Stage | Instrumented by |
+| --- | --- |
+| Content → Audience | `[ analytics, UTM, link shorteners ]` |
+| Audience → Enquiry | `POST /api/v1/me/commissions`, source captured in `[ ... ]` |
+| Enquiry → Quote | `commission_status_history`, `quotes` with `quote_validity_days` |
+| Quote → Deposit | `commission_payments` (`deposit`), confirmed by `finance` |
+| Deposit → Delivery | Milestone state transitions, `design_review` / `customer_review` |
+| Delivery → Advocacy | `[ post-purchase flow, review request, referral code ]` |
+
+### 2.8 How the platform supports the brand and the IP
+
+| Brand or IP need | Platform capability |
+| --- | --- |
+| Publish and revise About, Process, Pricing, FAQ pages without a deploy | CMS: `GET /pages/:slug`, plus `page_versions`, `/approve`, `/rollback` |
+| Update a page safely with history and sign-off | `pages.read` / `pages.update` / `pages.publish` permissions, `audit_logs` |
+| Let the IP publish without granting admin rights | `content_editor` role, scoped to CMS only |
+| Gate culturally sensitive content behind review | `cultural_reviewer` role, `cultural_reviews.*` permissions, `cultural_decision` field |
+| Show stage-by-stage progress to paying clients | Commission milestones, `customer_review` state, `/me/commissions/:id` |
+| Quote a bespoke project without inventing a price | `quotes` + `quote_validity_days` from `commission_config` |
+| Protect deposits and prevent self-confirmation | `commission_payments` unique index + `finance`-only `payments.confirm` |
+| Control capacity publicly when slots fill | `commission_config.max_slots` / `booked_slots` / `waitlist_enabled` via `GET /commission-config` |
+| Share large design files privately | `stored_files` with signed links, ownership-checked download |
+| Keep customer work confidential | SHA-256 content-addressed uploads, private-by-default file table |
+| Prove what happened, later | `audit_logs`, `*_status_history`, `request_id` on every response |
+| Prove what a maker can and cannot see | `maker` role with `assigned` scope; unassigned records return `404` |
+
+---
+
+## 3. Brand and IP Operations Playbook
+
+*Audience: internal team, agencies, collaborators. This section is the operating procedure behind Section 2. Replace every `[ ... ]` with a name, a date or a link.*
+
+### 3.1 Ownership
+
+| Area | Accountable | Responsible | Consulted | Informed |
+| --- | --- | --- | --- | --- |
+| Brand direction | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Visual identity | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Personal IP narrative | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Social publishing | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Cultural review | `[ ... ]` | `[ ... ]` | `[ iwi / cultural advisor ]` | `[ ... ]` |
+| Pricing and capacity | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Customer stories | `[ ... ]` | `[ ... ]` | `[ privacy_officer ]` | `[ ... ]` |
+| Crisis response | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+
+### 3.2 Asset governance
+
+| Asset class | Source of truth | Naming convention | Retention | Approval |
+| --- | --- | --- | --- | --- |
+| Brand marks and templates | `[ location ]` | `[ e.g. brand-logo-primary-2026-01.svg ]` | `[ ... ]` | `[ ... ]` |
+| Photography masters | `[ location ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Video masters | `[ location ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Customer media | `[ location, encrypted ]` | `[ ... ]` | `[ per consent expiry ]` | `[ customer sign-off ]` |
+| Cultural reference material | `[ location, restricted ]` | `[ ... ]` | `[ ... ]` | `[ cultural reviewer only ]` |
+| Sales and copy documents | `[ CMS, via /admin/pages ]` | `[ ... ]` | `[ page_versions ]` | `[ pages.publish ]` |
+
+Rules:
+
+- One source of truth per asset class. A logo that exists in five places is a logo that will drift.
+- Public-facing copy is edited through the CMS so that `page_versions` and `audit_logs` record who changed what. Editing live copy by hand in a deploy bypasses the audit trail — do not do it.
+- Customer media is stored separately from marketing media, with access logged.
+
+### 3.3 Content production workflow
+
+| Stage | Owner | Entry criteria | Exit criteria | Typical turnaround |
+| --- | --- | --- | --- | --- |
+| 1. Idea | `[ ... ]` | Tied to a content pillar | Written hook and target segment | `[ ... ]` |
+| 2. Research | `[ ... ]` | Idea approved | Claims sourced, cultural elements identified | `[ ... ]` |
+| 3. Draft | `[ ... ]` | Research cleared | Script or shot list, pricing and lead times fact-checked | `[ ... ]` |
+| 4. Produce | `[ ... ]` | Draft approved | Raw files archived, consent forms filed | `[ ... ]` |
+| 5. Review — brand | `[ ... ]` | Edit complete | Voice, claims, visual identity pass | `[ ... ]` |
+| 6. Review — cultural | `[ cultural reviewer ]` | Cultural elements present | Signed off, evidence retained | `[ ... ]` |
+| 7. Schedule | `[ ... ]` | All reviews passed | Queued with UTMs and destination link | `[ ... ]` |
+| 8. Publish | `[ ... ]` | Scheduled | Live, monitored for first hour | `[ ... ]` |
+| 9. Amplify | `[ ... ]` | Published | Repurposed across channels | `[ ... ]` |
+| 10. Measure | `[ ... ]` | 7 days elapsed | Metrics recorded, learnings noted | `[ ... ]` |
+
+**Fact-check rule.** Before any draft leaves stage 3, verify against the system of record: current price, current lead time, current `commission_config` slot availability, and current commission status. A marketing post contradicting the live configuration is a customer-service incident waiting to happen.
+
+**Cultural review rule.** Any content touching Māori language, motifs, names, protocols or imagery enters stage 6 and does not publish without the cultural reviewer's recorded approval. "It's just a decorative pattern" is not an exemption.
+
+### 3.4 Customer content consent
+
+Required before any customer work, likeness, measurement, name or story is published.
+
+| Requirement | Detail |
+| --- | --- |
+| Consent form | `[ location of template ]` |
+| Must cover | Scope of use, channels, paid promotion, portrait rights |
+| Grant period | `[ e.g. 24 months ]` |
+| Revocation | `[ process and turnaround, e.g. 48 hours ]` |
+| Storage | `[ location, access list ]` |
+| Handling on expiry | `[ e.g. pull from all channels, retain in archive, delete on request ]` |
+| Owner | `[ ... ]` |
+
+Rules:
+
+- A commission order is **not** consent. Consent is a separate, explicit act.
+- Revocation is honoured without negotiation, including on paid promotion. `[ ... ]` covers any contractual carve-outs, if they exist at all.
+- Commission photography taken during production stays private until consent is on file. The platform's private-file controls (`stored_files`, signed links) exist for exactly this.
+- Never publish a minor's likeness, or a client's commission in progress, without a named guardian's written consent.
+
+### 3.5 Cultural review
+
+| Element | Handling |
+| --- | --- |
+| Māori language, tikana, kapa haka references | `[ reviewer and process ]` |
+| Cultural patterns and motifs | `[ ... ]` — never generated without review |
+| Place names, mana whenua | `[ ... ]` |
+| Portrait use and depiction | `[ ... ]` |
+| Attribution requirements | `[ ... ]` |
+| Escalation for a concern or complaint | `[ contact, response SLA ]` |
+
+This section operates the same way the code does: the reviewer's decision is recorded, not assumed, and it gates publication rather than being a formality after the fact.
+
+### 3.6 Launch checklist for anything customer-facing
+
+Before a feature, page, price change or campaign goes live:
+
+- [ ] Copy fact-checked against live configuration
+- [ ] Cultural review passed where applicable
+- [ ] Legal review of claims, especially comparative or sustainability claims
+- [ ] Pricing, tax and currency display verified for target markets
+- [ ] Inventory and `commission_config` availability accurate
+- [ ] Mobile and accessibility pass (`contrast`, `focus order`, `alt text`, `reduced motion`)
+- [ ] Analytics and UTMs in place, destination link tested
+- [ ] Support has the FAQ, and the outbox template exists if mail is involved
+- [ ] Rollback plan identified — for CMS changes, `POST /admin/pages/:id/rollback`
+- [ ] Post-launch monitoring owner named
+
+### 3.7 Metrics
+
+| Metric | Definition | Source | Target | Review cadence |
+| --- | --- | --- | --- | --- |
+| Content reach | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Engagement rate | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Profile → site conversion | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Commission application rate | Applications per `[ ... ]` visitors | `commissions` | `[ ... ]` | `[ ... ]` |
+| Application → quote | `[ ... ]` | `commissions`, `quotes` | `[ ... ]` | `[ ... ]` |
+| Quote → deposit | `[ ... ]` | `commission_payments` | `[ ... ]` | `[ ... ]` |
+| Deposit → completion | `[ ... ]` | `commission_status_history` | `[ ... ]` | `[ ... ]` |
+| On-time delivery | Shipped before promised date | `orders`, `commissions` | `[ ... ]` | `[ ... ]` |
+| Slot utilisation | `booked_slots` / `max_slots` | `GET /commission-config` | `[ ... ]` | `[ ... ]` |
+| Repeat purchase rate | `[ ... ]` | `orders` | `[ ... ]` | `[ ... ]` |
+| Referral share | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Content-assisted revenue | `[ attribution model ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Response SLA met | Tickets answered within `[ ... ]` | `tickets` | `[ ... ]` | `[ ... ]` |
+| Refund rate | `[ ... ]` | `payments`, `refund_records` | `[ ... ]` | `[ ... ]` |
+| Cultural review turnaround | `[ ... ]` | `audit_logs` | `[ ... ]` | `[ ... ]` |
+
+### 3.8 Escalation and incident handling
+
+| Situation | First responder | Escalation to | Customer communication | Platform record |
+| --- | --- | --- | --- | --- |
+| Cultural concern or complaint | `[ ... ]` | `[ cultural reviewer / iwi advisor ]` | `[ ... ]` | `tickets` + `audit_logs` |
+| Privacy or data access request | `[ privacy_officer ]` | `[ ... ]` | `[ ... ]` | `audit_logs` |
+| Payment dispute or refund | `[ finance ]` | `[ ... ]` | `[ ... ]` | `payments`, `refund_records` |
+| Commission quality complaint | `[ ... ]` | `[ ... ]` | `[ ... ]` | `tickets`, `commission_change_requests` |
+| Production overrun or missed milestone | `[ ... ]` | `[ ... ]` | Proactive update before the customer asks | `commission_status_history` |
+| Public negative post | `[ ... ]` | `[ ... ]` | `[ ... ]` | `[ ... ]` |
+| Platform outage | `[ ... ]` | `[ ... ]` | Status update via `[ ... ]` | `GET /health`, `GET /health/ready` |
+
+Principles: respond before the customer escalates; never dispute a privacy or cultural concern publicly; record every commitment made to a customer somewhere the next person can find it.
+
+---
+
+## 4. Tech Stack
 
 ### Backend
 
@@ -76,7 +397,7 @@ Also included: **repair, refurbishment and replaceable-parts** services, plus **
 
 ---
 
-## 3. Repository Layout
+## 5. Repository Layout
 
 ```
 fursuit_head/
@@ -117,9 +438,9 @@ fursuit_head/
 
 ---
 
-## 4. Quick Start
+## 6. Quick Start
 
-### 4.1 Prerequisites
+### 6.1 Prerequisites
 
 | Dependency | Version | Purpose |
 | --- | --- | --- |
@@ -127,7 +448,7 @@ fursuit_head/
 | Node.js | 18+ (tested on 20.x) | Frontend build |
 | Docker + Docker Compose | Any recent release | MySQL / Redis / Mailpit |
 
-### 4.2 Start infrastructure services
+### 6.2 Start infrastructure services
 
 ```bash
 docker compose up -d
@@ -148,7 +469,7 @@ Compose mounts `backend/migrations/*.sql` into MySQL's `/docker-entrypoint-initd
 > docker compose down -v && docker compose up -d
 > ```
 
-### 4.3 Start the backend
+### 6.3 Start the backend
 
 ```bash
 cd backend
@@ -171,7 +492,7 @@ curl -s http://localhost:8080/health
 # {"status":"ok","time":"...","checks":{"database":"ok","redis":"ok"}}
 ```
 
-### 4.4 Start the frontends
+### 6.4 Start the frontends
 
 In two terminals:
 
@@ -194,7 +515,7 @@ npm run build      # output in dist/
 npm run preview
 ```
 
-### 4.5 Local email verification
+### 6.5 Local email verification
 
 New accounts are created with status `pending_email` and must verify before they can log in. Mailpit does not send real mail, so retrieve tokens either from the UI at http://localhost:8025, or directly from the database:
 
@@ -205,7 +526,7 @@ UPDATE users SET status='active', email_verified_at=NOW() WHERE email='test@furs
 
 ---
 
-## 5. Environment Variables
+## 7. Environment Variables
 
 Configuration lives entirely in `backend/internal/config/config.go`. **Every value has a working default**, so the stack boots with no `.env` file. Production must override `JWT_SECRET`, `DB_PASSWORD` and the `DB_*` host settings.
 
@@ -236,9 +557,9 @@ Configuration lives entirely in `backend/internal/config/config.go`. **Every val
 
 ---
 
-## 6. Seed Data and Default Accounts
+## 8. Seed Data and Default Accounts
 
-### 6.1 Default administrator
+### 8.1 Default administrator
 
 | Email | Password | Role |
 | --- | --- | --- |
@@ -246,7 +567,7 @@ Configuration lives entirely in `backend/internal/config/config.go`. **Every val
 
 > ⚠️ Change this password immediately after first login. The account is inserted by `migrations/init.sql` as a bcrypt hash.
 
-### 6.2 Seeded content
+### 8.2 Seeded content
 
 - **57 permissions** in `permissions`, grouped by module: `auth`, `products`, `categories`, `orders`, `commissions`, `milestones`, `quotes`, `payments`, `inventory`, `tickets`, `users`, `roles`, `pages`, `audit`, `reports`, `settings`, `cultural_reviews`, `privacy_requests`
 - **11 system roles** in `roles`, all flagged `is_system = TRUE` and therefore undeletable
@@ -254,7 +575,7 @@ Configuration lives entirely in `backend/internal/config/config.go`. **Every val
 - **Commission configuration**: open, 5 production slots, 0 booked, waitlist enabled, 50% minimum deposit, 14-day quote validity
 - **Product category** seed data
 
-### 6.3 Migration order
+### 8.3 Migration order
 
 | File | Contents |
 | --- | --- |
@@ -269,7 +590,7 @@ Configuration lives entirely in `backend/internal/config/config.go`. **Every val
 
 ---
 
-## 7. API Reference
+## 9. API Reference
 
 Base path `/api/v1`. Uniform response envelope:
 
@@ -281,7 +602,7 @@ Base path `/api/v1`. Uniform response envelope:
 { "success": false, "error": { "code": "FORBIDDEN", "message": "Insufficient permissions", "request_id": "..." } }
 ```
 
-### 7.1 Public endpoints
+### 9.1 Public endpoints
 
 | Method | Path | Description | Rate limited |
 | --- | --- | --- | --- |
@@ -300,7 +621,7 @@ Base path `/api/v1`. Uniform response envelope:
 | GET | `/commission-config` | Open slots and deposit ratio | — |
 | GET | `/files/:id/download` | Private file download (signed-link verified) | — |
 
-### 7.2 Authenticated customer endpoints
+### 9.2 Authenticated customer endpoints
 
 | Method | Path |
 | --- | --- |
@@ -321,7 +642,7 @@ Base path `/api/v1`. Uniform response envelope:
 | POST | `/upload` |
 | GET | `/me/files/:id/link` |
 
-### 7.3 Admin endpoints
+### 9.3 Admin endpoints
 
 Require a valid session **plus** `auth.admin_login` **plus** the route's registered permission.
 
@@ -339,7 +660,7 @@ Require a valid session **plus** `auth.admin_login` **plus** the route's registe
 | Audit | `/admin/audit` | Audit log |
 | Settings | `/admin/commission-config` | GET / PUT production slot configuration |
 
-### 7.4 Health checks
+### 9.4 Health checks
 
 | Path | Description |
 | --- | --- |
@@ -349,9 +670,9 @@ Require a valid session **plus** `auth.admin_login` **plus** the route's registe
 
 ---
 
-## 8. RBAC Model
+## 10. RBAC Model
 
-### 8.1 The three-stage check chain
+### 10.1 The three-stage check chain
 
 ```
 request → SessionAuth      (JWT signature + authoritative session lookup)
@@ -361,7 +682,7 @@ request → SessionAuth      (JWT signature + authoritative session lookup)
         → Handler
 ```
 
-### 8.2 Key design: an explicit route registry
+### 10.2 Key design: an explicit route registry
 
 `backend/internal/middleware/session.go` enumerates the required permission for **every** admin route:
 
@@ -378,7 +699,7 @@ var AdminPermissions = map[string][]string{
 
 **A newly added route that is not registered here is rejected with 403 — the design is fail-closed.** There is no code path where "someone forgot the permission check and it defaulted to allow."
 
-### 8.3 Session as the source of truth
+### 10.3 Session as the source of truth
 
 `SessionAuth` deliberately **ignores the roles and permissions carried inside the JWT**. It trusts only `user_id` and `session_id`, then re-resolves identity from the `user_sessions` table:
 
@@ -388,7 +709,7 @@ identity, err := resolver.ResolveSession(ctx, claims.UserID, claims.SessionID)
 
 Consequences: role changes, session revocation and forced logout take effect immediately rather than waiting for token expiry. The middleware also enforces `WithExpirationRequired()`, `WithIssuedAt()` and an `HS256` algorithm allowlist; anything missing or invalid yields 401.
 
-### 8.4 Data scope
+### 10.4 Data scope
 
 `role_permissions.scope` supports two visibility levels:
 
@@ -397,7 +718,7 @@ Consequences: role changes, session revocation and forced logout take effect imm
 
 The `maker` role uses `assigned` scope: it may only read and write commissions whose `maker_id` points at it, and unassigned records return `404` rather than `403`, so resource existence is not leaked.
 
-### 8.5 The 11 system roles
+### 10.5 The 11 system roles
 
 | Role | Scope | Responsibility |
 | --- | --- | --- |
@@ -417,7 +738,7 @@ The `maker` role uses `assigned` scope: it may only read and write commissions w
 
 ---
 
-## 9. Business State Machines
+## 11. Business State Machines
 
 Transitions are defined in `backend/internal/service/order_fsm.go` and `commission_fsm.go`. **Every transition runs inside a database transaction** and enforces:
 
@@ -426,7 +747,7 @@ Transitions are defined in `backend/internal/service/order_fsm.go` and `commissi
 - Rejection of illegal transitions
 - An append to `*_status_history` for the audit trail
 
-### 9.1 Order state machine
+### 11.1 Order state machine
 
 ```
 awaiting_payment ──→ paid ──→ processing ──→ ready_to_ship ──→ shipped ──→ delivered ──→ completed
@@ -444,7 +765,7 @@ Guard conditions:
 | `cancelled` | No completed payment may exist; a cancellation reason is mandatory; stock is released |
 | `shipped` | A tracking number is required |
 
-### 9.2 Commission state machine (V4, 24 states)
+### 11.2 Commission state machine (V4, 24 states)
 
 ```
 draft → submitted ─┬→ needs_info ─→ submitted
@@ -472,17 +793,17 @@ Guard conditions:
 | `shipped` | A tracking number is required |
 | `needs_revision` | `revision_count < 2`, preventing unbounded rework loops |
 
-### 9.3 Commission payments
+### 11.3 Commission payments
 
 The `commission_payments` table carries a **unique index** `one_payment_stage` on `(commission_id, type)`, so the database itself guarantees that the deposit and the final payment can each be confirmed only once. `confirmed_by` is a foreign key to `users`, satisfying both segregation of duties and traceability.
 
 ---
 
-## 10. Frontend Applications
+## 12. Frontend Applications
 
 Two independent SPAs, each with its own `npm install` / `npm run dev` / `npm run build`.
 
-### 10.1 Storefront — `frontend/shop` (port 3000)
+### 12.1 Storefront — `frontend/shop` (port 3000)
 
 | Route | Page | Access |
 | --- | --- | --- |
@@ -499,7 +820,7 @@ Two independent SPAs, each with its own `npm install` / `npm run dev` / `npm run
 
 Shared components: `Layout`, `ProtectedRoute`, `StatusChip`, `Timeline`, `Modal`, `Stepper`, `Skeleton`, `Toast`, plus `ui/` primitives (`Button`, `Card`, `Input`, `Select`).
 
-### 10.2 Admin console — `frontend/admin` (port 3001)
+### 12.2 Admin console — `frontend/admin` (port 3001)
 
 | Route | Page |
 | --- | --- |
@@ -516,15 +837,15 @@ Shared components: `Layout`, `ProtectedRoute`, `StatusChip`, `Timeline`, `Modal`
 
 Shared components: `AdminLayout`, `DataTable`, `Modal`, `ProtectedRoute`, `StatusBadge`.
 
-### 10.3 Frontend authorization
+### 12.3 Frontend authorization
 
 Each app keeps its own token storage and permission context (`store/authStore.jsx` + `store/tokenStore.js`); admin and storefront sessions are never shared. An axios response interceptor handles `401` uniformly by clearing credentials and redirecting to `/login`.
 
 ---
 
-## 11. Testing
+## 13. Testing
 
-### 11.1 Go unit and integration tests
+### 13.1 Go unit and integration tests
 
 ```bash
 cd backend
@@ -547,7 +868,7 @@ Coverage:
 | `service/order_integration_test.go` | Order creation → payment → status transitions |
 | `service/commission_fsm_test.go` | Commission state machine transition matrix |
 
-### 11.2 Bash integration suite
+### 13.2 Bash integration suite
 
 Requires the backend to be running:
 
@@ -559,7 +880,7 @@ Ten groups: public endpoints → registration and email verification → login �
 
 Default credentials: admin `admin@fursuit.nz / admin123`, test customer `test@fursuit.nz / testpass123`.
 
-### 11.3 Playwright E2E
+### 13.3 Playwright E2E
 
 ```bash
 cd tests/e2e
@@ -584,9 +905,9 @@ Configuration: `timeout 30s`, `retries 1`, `workers 1`, automatic screenshots on
 
 ---
 
-## 12. Security and Operations
+## 14. Security and Operations
 
-### 12.1 Security response headers
+### 14.1 Security response headers
 
 `SecurityHeadersMiddleware` injects the following on every response:
 
@@ -601,36 +922,36 @@ Content-Security-Policy: default-src 'self'
 X-Request-ID: <uuid>          # RequestIDMiddleware
 ```
 
-### 12.2 Rate limiting
+### 14.2 Rate limiting
 
 `RateLimitMiddleware` implements a fixed-window counter using Redis `INCR` + `EXPIRE`, applied to registration, customer login, admin login and password-reset requests. Responses carry `X-RateLimit-Limit` and `X-RateLimit-Remaining`; exceeding the limit returns `429` with a `Retry-After` header.
 
-### 12.3 Brute-force protection
+### 14.3 Brute-force protection
 
 After `MAX_LOGIN_ATTEMPTS` consecutive failures (5 by default) the account is locked for `LOCKOUT_DURATION` (15 minutes by default).
 
-### 12.4 File uploads
+### 14.4 File uploads
 
 - Extension allowlist: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.pdf`
 - Size capped by `MAX_FILE_SIZE_MB` (20 MB by default), enforced again via `http.MaxBytesReader`
 - Public images are archived by `YYYY/MM/DD` and named with the first 16 hex characters of their SHA-256 digest — content-addressed, so duplicates collapse naturally
 - **Private files** (`stored_files`) never land in a public path; downloads require a signed link and are checked against the file's owner
 
-### 12.5 Email outbox
+### 14.5 Email outbox
 
 `EmailService.QueueEmail` only writes to the `email_outboxes` table; a background goroutine calls `ProcessOutbox()` every 30 seconds to deliver over SMTP. The benefit: an SMTP outage never blocks a business transaction, and a restart never loses queued mail.
 
-### 12.6 Graceful shutdown
+### 14.6 Graceful shutdown
 
 `SIGINT` / `SIGTERM` are handled, and `srv.Shutdown` allows up to 5 seconds for in-flight requests to complete.
 
-### 12.7 Connection pooling
+### 14.7 Connection pooling
 
 `SetMaxIdleConns(10)`, `SetMaxOpenConns(100)`, `SetConnMaxLifetime(1h)`.
 
 ---
 
-## 13. Known Issues
+## 15. Known Issues
 
 **The commission state machine tests do not pass.** In `go test ./internal/service/`, `TestCommissionFSM_CanTransition` and `TestCommissionFSM_TransitionMatrix_Completeness` fail with 32 failing subtests.
 
@@ -648,7 +969,7 @@ All other packages pass; `internal/middleware` is fully green.
 
 ---
 
-## 14. Three-Phase Roadmap
+## 16. Three-Phase Roadmap
 
 | Phase | Scope | Status |
 | --- | --- | --- |
@@ -662,7 +983,7 @@ Phase 1 **explicitly excludes** real credit-card processing, automatic shipping 
 
 ---
 
-## 15. Legal and Cultural Compliance
+## 17. Legal and Cultural Compliance
 
 The system implements the following compliance baseline; the authoritative wording lives in Chapter 13 of the requirements document.
 
@@ -677,6 +998,6 @@ The system implements the following compliance baseline; the authoritative wordi
 
 ---
 
-## 16. License
+## 18. License
 
 Internal project; no open-source license has been designated. The requirements document `NZ_Fursuit_Platform_Three_Phase_Closed_Loop_Requirements_RBAC_First_v4.0.docx` is the single source of truth — where code and documentation disagree, the document wins.
