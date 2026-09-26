@@ -1,7 +1,7 @@
-# Fursuit Head — 新西兰兽装头套定制平台
+# Fursuit Head — New Zealand Fursuit Head Commission Platform
 
-> 品牌官网 + 现货商城 + Commission 定制 + 制作排期 + 收款 + 发货 + 售后的一体化电商平台。
-> 技术路线遵循《NZ Fursuit Platform Three-Phase Closed-Loop Requirements V4.0》：**RBAC 优先**、Go 三层架构、React 双前端、MySQL、Redis。
+> A unified commerce platform for a New Zealand fursuit head brand: marketing site, ready-to-ship store, made-to-order and full-commission ordering, production scheduling, payment collection, shipping, and after-sales support.
+> Built to the spec of *NZ Fursuit Platform Three-Phase Closed-Loop Requirements V4.0*: **RBAC first**, Go layered architecture, dual React frontends, MySQL, Redis.
 
 [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![Gin](https://img.shields.io/badge/Gin-1.9.1-00ADD8?logo=gin&logoColor=white)](https://gin-gonic.com/)
@@ -15,140 +15,140 @@
 
 ---
 
-## 目录
+## Table of Contents
 
-- [1. 项目定位](#1-项目定位)
-- [2. 技术栈](#2-技术栈)
-- [3. 目录结构](#3-目录结构)
-- [4. 快速开始](#4-快速开始)
-- [5. 环境变量](#5-环境变量)
-- [6. 种子数据与默认账号](#6-种子数据与默认账号)
-- [7. API 概览](#7-api-概览)
-- [8. RBAC 权限模型](#8-rbac-权限模型)
-- [9. 业务状态机](#9-业务状态机)
-- [10. 前端应用](#10-前端应用)
-- [11. 测试](#11-测试)
-- [12. 安全与运维](#12-安全与运维)
-- [13. 已知问题](#13-已知问题)
-- [14. 三阶段路线图](#14-三阶段路线图)
-- [15. 法律与文化合规](#15-法律与文化合规)
-- [16. 许可](#16-许可)
+- [1. Overview](#1-overview)
+- [2. Tech Stack](#2-tech-stack)
+- [3. Repository Layout](#3-repository-layout)
+- [4. Quick Start](#4-quick-start)
+- [5. Environment Variables](#5-environment-variables)
+- [6. Seed Data and Default Accounts](#6-seed-data-and-default-accounts)
+- [7. API Reference](#7-api-reference)
+- [8. RBAC Model](#8-rbac-model)
+- [9. Business State Machines](#9-business-state-machines)
+- [10. Frontend Applications](#10-frontend-applications)
+- [11. Testing](#11-testing)
+- [12. Security and Operations](#12-security-and-operations)
+- [13. Known Issues](#13-known-issues)
+- [14. Three-Phase Roadmap](#14-three-phase-roadmap)
+- [15. Legal and Cultural Compliance](#15-legal-and-cultural-compliance)
+- [16. License](#16-license)
 
 ---
 
-## 1. 项目定位
+## 1. Overview
 
-面向新西兰及国际客户的 **兽装头套（Fursuit Head / Kemono Head）** 品牌官网与电商定制平台，支持三条业务主线：
+A brand and e-commerce platform for **fursuit heads / kemono heads** serving New Zealand and international customers. Three commercial models run through one platform:
 
-| 业务类型 | 说明 | 主流程 |
+| Model | Description | Flow |
 | --- | --- | --- |
-| **Ready to Ship** | 现货商品 | 浏览 → 加购 → 结算 → 银行转账/人工确认 → 备货 → 发货 |
-| **Made to Order** | 标准配置定制 | 选配置 → 下单 → 排期 → 制作 → 质检 → 发货 |
-| **Full Commission** | 完全定制 | 申请 → 审核 → 文化筛查 → 报价 → 订金 → 制作 → 阶段确认 → 尾款 → 发货 → 售后 |
+| **Ready to Ship** | In-stock products | Browse → Cart → Checkout → Bank transfer / manual confirmation → Pick & pack → Ship |
+| **Made to Order** | Standard-configuration custom builds | Configure → Order → Schedule → Produce → QC → Ship |
+| **Full Commission** | Fully bespoke work | Application → Review → Cultural screening → Quote → Deposit → Production → Stage approvals → Final payment → Ship → After-sales |
 
-另含 **维修 / 翻新 / 可替换部件** 服务，以及 **Māori 文化敏感内容**的筛查、审核与证据留存。
+Also included: **repair, refurbishment and replaceable-parts** services, plus **Māori culturally sensitive content** screening, review, and evidence retention.
 
-**设计原则：RBAC 先行。** 权限、资源所有权校验、审批分离（maker 无确认收款权）与审计日志从第一阶段即作为平台基础能力落地——不允许"前端隐藏菜单、后端接口仍可越权"。
-
----
-
-## 2. 技术栈
-
-### 后端
-
-- **Go 1.22+** / **Gin 1.9.1** / **GORM 1.25** / MySQL 驱动
-- **Redis 7**（go-redis/v9）：限流、会话缓存、健康检查
-- **golang-jwt/jwt v5**：Access Token（HS256，带 `session_id`）
-- **golang.org/x/crypto**：bcrypt 密码哈希
-- **google/uuid**：文件命名
-- 三层架构：`handler`（HTTP 边界）→ `service`（业务与事务）→ `repository` / `platform`（数据访问）
-
-### 前端（双前端，独立部署、独立路由、独立权限上下文）
-
-- **React 18.3** + **React Router 6** + **Vite**（shop 用 5.x，admin 用 6.x）
-- **Tailwind CSS 4**（`@tailwindcss/vite` 插件，无 `tailwind.config.js`）
-- **axios** + 拦截器（统一注入 Bearer Token、401 自动登出跳转）
-
-### 基础设施
-
-- **Docker Compose**：MySQL 8.0、Redis 7、Mailpit（本地 SMTP 收信箱）
-- **Playwright 1.62**：E2E 测试（shop / admin / api 三个 project）
+**Core principle: RBAC first.** Permissions, resource-ownership checks, segregation of duties (a maker can never confirm their own payment), and audit logging are platform foundations from Phase 1 — the design explicitly forbids "hide the menu in the frontend while the API endpoint stays reachable."
 
 ---
 
-## 3. 目录结构
+## 2. Tech Stack
+
+### Backend
+
+- **Go 1.22+** / **Gin 1.9.1** / **GORM 1.25** with the MySQL driver
+- **Redis 7** (go-redis/v9): rate limiting, session resolution, health checks
+- **golang-jwt/jwt v5**: access tokens (HS256, carrying a `session_id`)
+- **golang.org/x/crypto**: bcrypt password hashing
+- **google/uuid**: file naming
+- Layered architecture: `handler` (HTTP boundary) → `service` (business logic and transactions) → `repository` / `platform` (data access)
+
+### Frontend (two independent SPAs)
+
+- **React 18.3** + **React Router 6** + **Vite** (5.x for shop, 6.x for admin)
+- **Tailwind CSS 4** via the `@tailwindcss/vite` plugin — no `tailwind.config.js`
+- **axios** with interceptors for automatic Bearer token injection and 401-driven logout/redirect
+
+### Infrastructure
+
+- **Docker Compose**: MySQL 8.0, Redis 7, Mailpit (local SMTP inbox)
+- **Playwright 1.62**: E2E suite with `shop` / `admin` / `api` projects
+
+---
+
+## 3. Repository Layout
 
 ```
 fursuit_head/
 ├── docker-compose.yml              # MySQL + Redis + Mailpit
 ├── README.md
-├── business_flow.png               # 业务流程图
-├── NZ_Fursuit_..._v4.0.docx        # 需求规格说明书（唯一事实来源）
+├── business_flow.png               # Business flow diagram
+├── NZ_Fursuit_..._v4.0.docx        # Requirements specification (source of truth)
 │
-├── backend/                        # Go API 服务
-│   ├── cmd/api/main.go             # 入口：依赖装配、路由、优雅退出
+├── backend/                        # Go API service
+│   ├── cmd/api/main.go             # Entry: DI wiring, routing, graceful shutdown
 │   ├── go.mod / go.sum
 │   ├── internal/
-│   │   ├── config/                 # 环境变量配置
-│   │   ├── handler/                # HTTP 层（11 个 handler）
-│   │   ├── middleware/             # 会话鉴权、RBAC、CORS、限流、安全头
-│   │   ├── model/                  # GORM 模型
+│   │   ├── config/                 # Environment-based configuration
+│   │   ├── handler/                # HTTP layer (11 handlers)
+│   │   ├── middleware/             # Session auth, RBAC, CORS, rate limit, security headers
+│   │   ├── model/                  # GORM models
 │   │   ├── platform/
-│   │   │   ├── db/                 # MySQL 连接池
-│   │   │   └── redis/              # Redis 客户端
-│   │   ├── repository/             # 会话仓储
-│   │   ├── service/                # 业务逻辑 + 状态机 + 事务
-│   │   └── dto/                    # 请求/响应 DTO
-│   ├── migrations/                 # 顺序执行的 SQL 迁移（init → 006）
-│   └── uploads/                    # 运行时上传目录（已 gitignore）
+│   │   │   ├── db/                 # MySQL connection pool
+│   │   │   └── redis/              # Redis client
+│   │   ├── repository/             # Session repository
+│   │   ├── service/                # Business logic + state machines + transactions
+│   │   └── dto/                    # Request/response DTOs
+│   ├── migrations/                 # Ordered SQL migrations (init → 006)
+│   └── uploads/                    # Runtime upload directory (gitignored)
 │
 ├── frontend/
-│   ├── shop/                       # 商城前台（端口 3000）
-│   └── admin/                      # 管理后台（端口 3001）
+│   ├── shop/                       # Storefront (port 3000)
+│   └── admin/                      # Admin console (port 3001)
 │
 ├── tests/
-│   ├── test_integration.sh         # Bash + curl 集成测试（10 组）
+│   ├── test_integration.sh         # Bash + curl integration suite (10 groups)
 │   └── e2e/                        # Playwright E2E
 │       ├── playwright.config.js
 │       └── tests/{shop,admin,api}/
 │
-└── docs/requirements.txt           # 文档生成工具依赖
+└── docs/requirements.txt           # Document tooling dependencies
 ```
 
 ---
 
-## 4. 快速开始
+## 4. Quick Start
 
-### 4.1 前置依赖
+### 4.1 Prerequisites
 
-| 依赖 | 版本 | 说明 |
+| Dependency | Version | Purpose |
 | --- | --- | --- |
-| Go | 1.22+ | 后端构建 |
-| Node.js | 18+（实测 20.x） | 前端构建 |
-| Docker + Docker Compose | 任意近期版本 | MySQL / Redis / Mailpit |
+| Go | 1.22+ | Backend build |
+| Node.js | 18+ (tested on 20.x) | Frontend build |
+| Docker + Docker Compose | Any recent release | MySQL / Redis / Mailpit |
 
-### 4.2 启动依赖服务
+### 4.2 Start infrastructure services
 
 ```bash
 docker compose up -d
-docker compose ps          # 等待 mysql、redis 均为 healthy
+docker compose ps          # wait until mysql and redis both report healthy
 ```
 
-Compose 会自动把 `backend/migrations/*.sql` 按文件名顺序挂载到 MySQL 的 `/docker-entrypoint-initdb.d/`，**首次启动即完成建库建表与种子数据**。
+Compose mounts `backend/migrations/*.sql` into MySQL's `/docker-entrypoint-initdb.d/` in filename order, so **the schema and all seed data are created on first boot**.
 
-| 服务 | 地址 | 说明 |
+| Service | Address | Notes |
 | --- | --- | --- |
-| MySQL | `localhost:3307` | 库 `fursuit_platform`，用户 `root` / `password` |
-| Redis | `localhost:6380` | 无密码 |
-| Mailpit UI | http://localhost:8025 | 本地邮件收件箱（验证码、重置链接） |
+| MySQL | `localhost:3307` | Database `fursuit_platform`, user `root` / `password` |
+| Redis | `localhost:6380` | No password |
+| Mailpit UI | http://localhost:8025 | Local inbox for verification and reset links |
 | Mailpit SMTP | `localhost:1025` | |
 
-> ⚠️ 迁移脚本仅在 MySQL **数据卷为空**时执行。若需重置：
+> ⚠️ Migrations only run when the MySQL **data volume is empty**. To reset:
 > ```bash
 > docker compose down -v && docker compose up -d
 > ```
 
-### 4.3 启动后端
+### 4.3 Start the backend
 
 ```bash
 cd backend
@@ -157,213 +157,213 @@ go run ./cmd/api
 # → Server starting on port 8080
 ```
 
-构建二进制：
+Build a binary instead:
 
 ```bash
 go build -o fursuit-api ./cmd/api
 ./fursuit-api
 ```
 
-验证：
+Verify:
 
 ```bash
-curl -s http://localhost:8080/health | jq
+curl -s http://localhost:8080/health
 # {"status":"ok","time":"...","checks":{"database":"ok","redis":"ok"}}
 ```
 
-### 4.4 启动前端
+### 4.4 Start the frontends
 
-开两个终端：
+In two terminals:
 
 ```bash
-# 终端 1 — 商城前台 http://localhost:3000
+# Terminal 1 — storefront at http://localhost:3000
 cd frontend/shop && npm install && npm run dev
 ```
 
 ```bash
-# 终端 2 — 管理后台 http://localhost:3001
+# Terminal 2 — admin console at http://localhost:3001
 cd frontend/admin && npm install && npm run dev
 ```
 
-两个前端的 Vite 配置都已把 `/api` 与 `/uploads` 代理到 `http://localhost:8080`，无需额外配置跨域或环境变量。
+Both Vite configs proxy `/api` and `/uploads` to `http://localhost:8080`, so no CORS setup or frontend env vars are required.
 
-生产构建：
+Production build:
 
 ```bash
-npm run build      # 产物在 dist/
+npm run build      # output in dist/
 npm run preview
 ```
 
-### 4.5 邮件验证（本地）
+### 4.5 Local email verification
 
-注册后账号状态为 `pending_email`，需完成验证才能登录。Mailpit 不会自动发信，验证码/链接可在以下位置取得：
+New accounts are created with status `pending_email` and must verify before they can log in. Mailpit does not send real mail, so retrieve tokens either from the UI at http://localhost:8025, or directly from the database:
 
-- Mailpit 界面：http://localhost:8025
-- 或直接查库：
-  ```sql
-  SELECT email, LEFT(token, 12) AS token FROM email_verifications ORDER BY id DESC LIMIT 5;
-  UPDATE users SET status='active', email_verified_at=NOW() WHERE email='test@fursuit.nz';
-  ```
+```sql
+SELECT email, LEFT(token, 12) AS token FROM email_verifications ORDER BY id DESC LIMIT 5;
+UPDATE users SET status='active', email_verified_at=NOW() WHERE email='test@fursuit.nz';
+```
 
 ---
 
-## 5. 环境变量
+## 5. Environment Variables
 
-全部配置集中在 `backend/internal/config/config.go`，**每一项都有默认值**，无 `.env` 也能跑起来。生产环境必须覆盖 `JWT_SECRET`、`DB_PASSWORD`、`DB_*`。
+Configuration lives entirely in `backend/internal/config/config.go`. **Every value has a working default**, so the stack boots with no `.env` file. Production must override `JWT_SECRET`, `DB_PASSWORD` and the `DB_*` host settings.
 
-| 变量 | 默认值 | 说明 |
+| Variable | Default | Description |
 | --- | --- | --- |
-| `SERVER_PORT` | `8080` | API 监听端口 |
-| `DB_HOST` | `localhost` | MySQL 主机 |
-| `DB_PORT` | `3307` | MySQL 端口（Compose 映射值） |
-| `DB_USER` | `root` | MySQL 用户 |
-| `DB_PASSWORD` | `password` | MySQL 密码 |
-| `DB_NAME` | `fursuit_platform` | 数据库名 |
-| `REDIS_ADDR` | `localhost:6380` | Redis 地址 |
-| `JWT_SECRET` | `fursuit-dev-secret-key-change-in-prod` | **HS256 签名密钥，生产必改** |
-| `FRONTEND_URL` | `http://localhost:3000` | CORS 允许来源（另硬编码允许 3001/5173/5174） |
-| `ACCESS_TOKEN_TTL` | `15m` | Access Token 有效期 |
-| `REFRESH_TOKEN_TTL` | `168h` (7d) | Refresh Token 有效期 |
-| `MAX_LOGIN_ATTEMPTS` | `5` | 登录失败锁定阈值 |
-| `LOCKOUT_DURATION` | `15m` | 账号锁定时长 |
-| `RATE_LIMIT_WINDOW` | `1m` | 限流窗口 |
-| `RATE_LIMIT_MAX` | `30` | 窗口内最大请求数 |
-| `SMTP_HOST` | `localhost` | SMTP 主机 |
-| `SMTP_PORT` | `1025` | SMTP 端口 |
-| `SMTP_USER` | *(空)* | SMTP 用户名 |
-| `SMTP_PASSWORD` | *(空)* | SMTP 密码 |
-| `SMTP_FROM` | `noreply@fursuit.local` | 发件人 |
-| `FILE_UPLOAD_PATH` | `./uploads` | 上传根目录（相对 `backend/`） |
-| `MAX_FILE_SIZE_MB` | `20` | 单文件大小上限 |
+| `SERVER_PORT` | `8080` | API listen port |
+| `DB_HOST` | `localhost` | MySQL host |
+| `DB_PORT` | `3307` | MySQL port (the Compose-mapped value) |
+| `DB_USER` | `root` | MySQL user |
+| `DB_PASSWORD` | `password` | MySQL password |
+| `DB_NAME` | `fursuit_platform` | Database name |
+| `REDIS_ADDR` | `localhost:6380` | Redis address |
+| `JWT_SECRET` | `fursuit-dev-secret-key-change-in-prod` | **HS256 signing secret — must be changed in production** |
+| `FRONTEND_URL` | `http://localhost:3000` | CORS-allowed origin (3001 / 5173 / 5174 are also hardcoded as allowed) |
+| `ACCESS_TOKEN_TTL` | `15m` | Access token lifetime |
+| `REFRESH_TOKEN_TTL` | `168h` (7d) | Refresh token lifetime |
+| `MAX_LOGIN_ATTEMPTS` | `5` | Failed logins before lockout |
+| `LOCKOUT_DURATION` | `15m` | Account lockout duration |
+| `RATE_LIMIT_WINDOW` | `1m` | Rate limit window |
+| `RATE_LIMIT_MAX` | `30` | Max requests per window |
+| `SMTP_HOST` | `localhost` | SMTP host |
+| `SMTP_PORT` | `1025` | SMTP port |
+| `SMTP_USER` | *(empty)* | SMTP username |
+| `SMTP_PASSWORD` | *(empty)* | SMTP password |
+| `SMTP_FROM` | `noreply@fursuit.local` | Sender address |
+| `FILE_UPLOAD_PATH` | `./uploads` | Upload root (relative to `backend/`) |
+| `MAX_FILE_SIZE_MB` | `20` | Per-file size limit |
 
 ---
 
-## 6. 种子数据与默认账号
+## 6. Seed Data and Default Accounts
 
-### 6.1 默认管理员
+### 6.1 Default administrator
 
-| 邮箱 | 密码 | 角色 |
+| Email | Password | Role |
 | --- | --- | --- |
 | `admin@fursuit.nz` | `admin123` | `super_admin` |
 
-> ⚠️ 首次登录后立即修改密码。该账号由 `migrations/init.sql` 以 bcrypt 哈希写入。
+> ⚠️ Change this password immediately after first login. The account is inserted by `migrations/init.sql` as a bcrypt hash.
 
-### 6.2 种子内容
+### 6.2 Seeded content
 
-- **57 个权限**（`permissions`），按模块划分：`auth` / `products` / `categories` / `orders` / `commissions` / `milestones` / `quotes` / `payments` / `inventory` / `tickets` / `users` / `roles` / `pages` / `audit` / `reports` / `settings` / `cultural_reviews` / `privacy_requests`
-- **11 个系统角色**（`roles`），`is_system = TRUE` 不可删除
-- **角色-权限映射**带 `scope`（`all` / `assigned`）两级数据范围
-- **Commission 配置**：开放中，5 个制作档期，已预订 0，允许候补，最少订金 50%，报价有效期 14 天
-- **商品分类**种子数据
+- **57 permissions** in `permissions`, grouped by module: `auth`, `products`, `categories`, `orders`, `commissions`, `milestones`, `quotes`, `payments`, `inventory`, `tickets`, `users`, `roles`, `pages`, `audit`, `reports`, `settings`, `cultural_reviews`, `privacy_requests`
+- **11 system roles** in `roles`, all flagged `is_system = TRUE` and therefore undeletable
+- **Role-permission mappings** carry a `scope` column supporting two data-visibility levels: `all` and `assigned`
+- **Commission configuration**: open, 5 production slots, 0 booked, waitlist enabled, 50% minimum deposit, 14-day quote validity
+- **Product category** seed data
 
-### 6.3 迁移文件顺序
+### 6.3 Migration order
 
-| 文件 | 内容 |
+| File | Contents |
 | --- | --- |
-| `init.sql` | 全部基础表（用户、商品、订单、Commission、工单、CMS、审计…）+ 权限/角色/管理员/分类种子 |
-| `002_add_new_tables.sql` | 补充表 |
-| `003_rbac_sessions.sql` | V4 RBAC 对齐：新增 12 权限 / 7 角色、**作废所有存量明文验证链接与 Refresh Token** |
-| `004_order_integrity.sql` | 订单完整性约束 |
-| `005_private_files.sql` | 私有文件（`stored_files`） |
-| `006_commission_workflow.sql` | V4 Commission 工作流：新增 `cultural_decision` / `deposit_received_cents` / `final_received_cents` / `tracking_number` / `revision_count`，新增 `commission_payments` |
+| `init.sql` | All base tables (users, products, orders, commissions, tickets, CMS, audit…) plus permissions, roles, the admin account and categories |
+| `002_add_new_tables.sql` | Additional tables |
+| `003_rbac_sessions.sql` | V4 RBAC alignment: 12 new permissions, 7 new roles, and **invalidation of all existing plaintext verification links and refresh tokens** |
+| `004_order_integrity.sql` | Order integrity constraints |
+| `005_private_files.sql` | Private file storage (`stored_files`) |
+| `006_commission_workflow.sql` | V4 commission workflow: adds `cultural_decision`, `deposit_received_cents`, `final_received_cents`, `tracking_number`, `revision_count`, and the `commission_payments` table |
 
-> `003` 与 `006` 均为**仅向前**迁移：撤销权限与令牌失效无法安全回滚。
+> `003` and `006` are **forward-only**: permission revocation and token invalidation cannot be safely reversed.
 
 ---
 
-## 7. API 概览
+## 7. API Reference
 
-基础路径 `/api/v1`，统一响应包：
+Base path `/api/v1`. Uniform response envelope:
 
 ```jsonc
-// 成功
+// success
 { "success": true, "data": { } }
 
-// 失败
+// failure
 { "success": false, "error": { "code": "FORBIDDEN", "message": "Insufficient permissions", "request_id": "..." } }
 ```
 
-### 7.1 公共端点
+### 7.1 Public endpoints
 
-| 方法 | 路径 | 说明 | 限流 |
+| Method | Path | Description | Rate limited |
 | --- | --- | --- | --- |
-| POST | `/auth/register` | 注册（触发验证邮件） | ✅ |
-| POST | `/auth/login` | 顾客登录 | ✅ |
-| POST | `/admin/auth/login` | 后台登录（校验 `auth.admin_login`） | ✅ |
-| POST | `/auth/verify-email` | 提交验证令牌 | — |
-| GET | `/auth/verify-email?token=` | 邮件链接验证 | — |
-| POST | `/auth/forgot-password` | 申请重置（不存在也返回成功，防枚举） | ✅ |
-| POST | `/auth/reset-password` | 用令牌重置密码 | — |
-| POST | `/auth/refresh-token` | 刷新 Access Token | — |
-| GET | `/products` | 商品列表 | — |
-| GET | `/products/:id` | 商品详情 | — |
-| GET | `/categories` | 分类列表 | — |
-| GET | `/pages/:slug` | CMS 页面内容 | — |
-| GET | `/commission-config` | 开放档期与订金比例 | — |
-| GET | `/files/:id/download` | 私有文件下载（校验签名链接） | — |
+| POST | `/auth/register` | Register (queues a verification email) | ✅ |
+| POST | `/auth/login` | Customer login | ✅ |
+| POST | `/admin/auth/login` | Admin login (requires `auth.admin_login`) | ✅ |
+| POST | `/auth/verify-email` | Submit a verification token | — |
+| GET | `/auth/verify-email?token=` | Verify via emailed link | — |
+| POST | `/auth/forgot-password` | Request a reset (returns success for unknown emails, preventing enumeration) | ✅ |
+| POST | `/auth/reset-password` | Reset password with token | — |
+| POST | `/auth/refresh-token` | Issue a new access token | — |
+| GET | `/products` | Product list | — |
+| GET | `/products/:id` | Product detail | — |
+| GET | `/categories` | Category list | — |
+| GET | `/pages/:slug` | CMS page content | — |
+| GET | `/commission-config` | Open slots and deposit ratio | — |
+| GET | `/files/:id/download` | Private file download (signed-link verified) | — |
 
-### 7.2 顾客端点（需会话）
+### 7.2 Authenticated customer endpoints
 
-| 方法 | 路径 |
+| Method | Path |
 | --- | --- |
 | GET | `/auth/me` |
 | POST | `/auth/logout` |
 | POST | `/auth/change-password` |
-| GET/POST/PUT/DELETE | `/me/cart`、`/me/cart/items[/:id]` |
-| GET/POST/PUT/DELETE | `/me/addresses[/:id]` |
-| GET/POST | `/me/orders`、`/me/orders/:id` |
+| GET / POST / PUT / DELETE | `/me/cart`, `/me/cart/items[/:id]` |
+| GET / POST / PUT / DELETE | `/me/addresses[/:id]` |
+| GET / POST | `/me/orders`, `/me/orders/:id` |
 | POST | `/me/orders/:id/cancel` |
-| GET/POST/PUT | `/me/commissions[/:id]` |
-| POST | `/me/commissions/:id/submit`（支持 `multipart/form-data`） |
+| GET / POST / PUT | `/me/commissions[/:id]` |
+| POST | `/me/commissions/:id/submit` (accepts `multipart/form-data`) |
 | GET | `/me/commissions/:id/quotes` |
 | POST | `/me/commissions/:id/quotes/:quoteId/accept` |
-| POST | `/me/payments/upload`（上传转账凭证） |
+| POST | `/me/payments/upload` (bank transfer receipt) |
 | GET | `/me/payments` |
-| GET/POST | `/me/tickets`、`/me/tickets/:id/messages` |
+| GET / POST | `/me/tickets`, `/me/tickets/:id/messages` |
 | POST | `/upload` |
 | GET | `/me/files/:id/link` |
 
-### 7.3 管理端点（需会话 + `auth.admin_login` + 路由级权限）
+### 7.3 Admin endpoints
 
-| 模块 | 路径前缀 | 关键操作 |
+Require a valid session **plus** `auth.admin_login` **plus** the route's registered permission.
+
+| Module | Path prefix | Key operations |
 | --- | --- | --- |
-| 仪表盘 | `/admin/dashboard/*` | `stats`、`activity` |
-| 用户 | `/admin/users[/:id]` | 列表、详情、更新、订单、审计轨迹 |
-| 角色 | `/admin/roles[/:id]` | 增删改查 + `/admin/permissions` |
-| 商品 | `/admin/products[/:id]` | 增删改查 |
-| 订单 | `/admin/orders[/:id]` | 列表、详情、`PUT /:id/status` |
-| Commission | `/admin/commissions[/:id]` | 列表、详情、更新、`PUT /:id/assign` |
-| 支付 | `/admin/payments` | 列表、`PUT /:id/confirm` |
-| 工单 | `/admin/tickets[/:id]` | 列表、详情、改状态、回消息 |
-| CMS | `/admin/pages[/:id]` | 增删改查、`/versions`、`/approve`、`/rollback` |
-| 审计 | `/admin/audit` | 审计日志 |
-| 设置 | `/admin/commission-config` | GET / PUT 制作档期配置 |
+| Dashboard | `/admin/dashboard/*` | `stats`, `activity` |
+| Users | `/admin/users[/:id]` | List, detail, update, orders, audit trail |
+| Roles | `/admin/roles[/:id]` | Full CRUD plus `/admin/permissions` |
+| Products | `/admin/products[/:id]` | Full CRUD |
+| Orders | `/admin/orders[/:id]` | List, detail, `PUT /:id/status` |
+| Commissions | `/admin/commissions[/:id]` | List, detail, update, `PUT /:id/assign` |
+| Payments | `/admin/payments` | List, `PUT /:id/confirm` |
+| Tickets | `/admin/tickets[/:id]` | List, detail, status change, reply |
+| CMS | `/admin/pages[/:id]` | CRUD, `/versions`, `/approve`, `/rollback` |
+| Audit | `/admin/audit` | Audit log |
+| Settings | `/admin/commission-config` | GET / PUT production slot configuration |
 
-### 7.4 健康检查
+### 7.4 Health checks
 
-| 路径 | 说明 |
+| Path | Description |
 | --- | --- |
-| `GET /health` | 就绪检查（含 DB + Redis ping），异常返回 `503` |
-| `GET /health/live` | 存活探针 |
-| `GET /health/ready` | 同 `/health` |
+| `GET /health` | Readiness check including DB and Redis pings; returns `503` when degraded |
+| `GET /health/live` | Liveness probe |
+| `GET /health/ready` | Same as `/health` |
 
 ---
 
-## 8. RBAC 权限模型
+## 8. RBAC Model
 
-### 8.1 三层校验链
+### 8.1 The three-stage check chain
 
 ```
-请求 → SessionAuth（JWT 验签 + 会话落库校验）
-     → AdminAuthorization（必须有 auth.admin_login）
-     → RBACMiddleware（按 路由 → 权限 显式注册表 校验）
-     → AssignedCommissionScope（maker 只能看到分配给自己的 Commission）
-     → Handler
+request → SessionAuth      (JWT signature + authoritative session lookup)
+        → AdminAuthorization (must hold auth.admin_login)
+        → RBACMiddleware    (permission lookup from the explicit route registry)
+        → AssignedCommissionScope (makers only see commissions assigned to them)
+        → Handler
 ```
 
-### 8.2 关键设计：显式路由注册表
+### 8.2 Key design: an explicit route registry
 
-`backend/internal/middleware/session.go` 中的 `AdminPermissions` map 穷举了**每一条**管理路由对应的权限：
+`backend/internal/middleware/session.go` enumerates the required permission for **every** admin route:
 
 ```go
 var AdminPermissions = map[string][]string{
@@ -376,75 +376,75 @@ var AdminPermissions = map[string][]string{
 }
 ```
 
-**新增路由若未在此注册，一律 403（fail-closed）**——不存在"忘了加权限判断就默认放行"的可能。
+**A newly added route that is not registered here is rejected with 403 — the design is fail-closed.** There is no code path where "someone forgot the permission check and it defaulted to allow."
 
-### 8.3 会话即真相源（Session as Source of Truth）
+### 8.3 Session as the source of truth
 
-`SessionAuth` **不信任 JWT 里的角色与权限**，只信任 `user_id` + `session_id`，然后回查 `user_sessions` 表解析身份：
+`SessionAuth` deliberately **ignores the roles and permissions carried inside the JWT**. It trusts only `user_id` and `session_id`, then re-resolves identity from the `user_sessions` table:
 
 ```go
 identity, err := resolver.ResolveSession(ctx, claims.UserID, claims.SessionID)
 ```
 
-好处：改角色 / 吊销会话 / 强制登出立即生效，无需等待 Token 过期。同时强制校验 `WithExpirationRequired()`、`WithIssuedAt()`、`HS256` 白名单，缺失或非法一律 401。
+Consequences: role changes, session revocation and forced logout take effect immediately rather than waiting for token expiry. The middleware also enforces `WithExpirationRequired()`, `WithIssuedAt()` and an `HS256` algorithm allowlist; anything missing or invalid yields 401.
 
-### 8.4 数据范围（Scope）
+### 8.4 Data scope
 
-`role_permissions.scope` 支持两级可见性：
+`role_permissions.scope` supports two visibility levels:
 
-- `all` — 全量数据
-- `assigned` — 仅与自己相关的记录
+- `all` — unrestricted access to records
+- `assigned` — only records related to the actor
 
-`maker` 角色即为 `assigned` scope：只能读写 `maker_id` 指向自己的 Commission，未分配的直接返回 `404`（而非 `403`，避免泄露资源存在性）。
+The `maker` role uses `assigned` scope: it may only read and write commissions whose `maker_id` points at it, and unassigned records return `404` rather than `403`, so resource existence is not leaked.
 
-### 8.5 11 个系统角色
+### 8.5 The 11 system roles
 
-| 角色 | scope | 职责 |
+| Role | Scope | Responsibility |
 | --- | --- | --- |
-| `super_admin` | all | 全部权限 |
-| `admin` | all | 除 `roles.*` 外的管理权限 |
-| `customer_service` | all | 客服：订单、Commission、报价、工单 |
-| `support` | all | 客服（V4 细分角色） |
-| `maker` | **assigned** | 制作师：仅自己的 Commission 与里程碑 |
-| `warehouse` | all | 仓储：订单发货、库存查询与调整 |
-| `finance` | all | 财务：支付确认/退款、报表 |
-| `cultural_reviewer` | all | Māori 文化内容审核 |
-| `privacy_officer` | all | 隐私请求（GDPR/Privacy Act）处理 |
-| `content_editor` | all | CMS 内容编辑 |
-| `customer` | — | 普通顾客（非后台角色） |
+| `super_admin` | all | Every permission |
+| `admin` | all | All management permissions except `roles.*` |
+| `customer_service` | all | Customer support: orders, commissions, quotes, tickets |
+| `support` | all | Support desk (V4 split-out role) |
+| `maker` | **assigned** | Maker: only their own commissions and milestones |
+| `warehouse` | all | Warehouse: order shipping, inventory read and adjustment |
+| `finance` | all | Finance: payment confirmation and refunds, reporting |
+| `cultural_reviewer` | all | Māori cultural content review |
+| `privacy_officer` | all | Privacy request handling under the Privacy Act |
+| `content_editor` | all | CMS content editing |
+| `customer` | — | Regular shopper (not a back-office role) |
 
-**职责分离要点**：`maker` 无 `payments.confirm` 权限——收款确认只能由 `finance` / `super_admin` 执行。
+**Segregation of duties:** `maker` does not hold `payments.confirm`. Only `finance` or `super_admin` can confirm a payment.
 
 ---
 
-## 9. 业务状态机
+## 9. Business State Machines
 
-状态流转定义在 `backend/internal/service/order_fsm.go` 与 `commission_fsm.go`，**所有流转都在数据库事务内执行**，并强制：
+Transitions are defined in `backend/internal/service/order_fsm.go` and `commission_fsm.go`. **Every transition runs inside a database transaction** and enforces:
 
-- `SELECT ... FOR UPDATE` 行锁
-- **乐观锁版本校验**（`current.Version != order.Version` → `concurrent modification`）
-- 非法流转直接报错
-- 每次流转写入 `*_status_history` 审计轨迹
+- `SELECT ... FOR UPDATE` row locking
+- **Optimistic version checks** (`current.Version != order.Version` → `concurrent modification`)
+- Rejection of illegal transitions
+- An append to `*_status_history` for the audit trail
 
-### 9.1 订单状态机
+### 9.1 Order state machine
 
 ```
 awaiting_payment ──→ paid ──→ processing ──→ ready_to_ship ──→ shipped ──→ delivered ──→ completed
        │                                                          ▲
        └──→ cancelled                                             │
                                                                   │
-refund_pending ──→ refunded        （已付款订单不可直接 cancelled）
+refund_pending ──→ refunded        (a paid order cannot be cancelled directly)
 ```
 
-守卫条件：
+Guard conditions:
 
-| 目标状态 | 前置条件 |
+| Target state | Precondition |
 | --- | --- |
-| `paid` | 已确认支付总额 **必须等于** 订单总额 |
-| `cancelled` | 不得存在已完成支付；必须提供取消原因；自动回滚库存 |
-| `shipped` | 必须提供物流单号 |
+| `paid` | Confirmed payments must **sum exactly** to the order total |
+| `cancelled` | No completed payment may exist; a cancellation reason is mandatory; stock is released |
+| `shipped` | A tracking number is required |
 
-### 9.2 Commission 状态机（V4，24 态）
+### 9.2 Commission state machine (V4, 24 states)
 
 ```
 draft → submitted ─┬→ needs_info ─→ submitted
@@ -452,7 +452,7 @@ draft → submitted ─┬→ needs_info ─→ submitted
                    │      ↑            │                    ↓
                    └──────┴────────────┘                deposit_pending → scheduled
                                                                 ↓
-                              design_review ⇄ needs_revision（最多 2 轮）
+                              design_review ⇄ needs_revision (at most 2 rounds)
                                    ↓
                               materials → production → customer_review
                                    ↓                              ↓
@@ -461,103 +461,103 @@ draft → submitted ─┬→ needs_info ─→ submitted
                         final_payment_pending → ready_to_ship → shipped → completed
 ```
 
-守卫条件：
+Guard conditions:
 
-| 目标状态 | 前置条件 |
+| Target state | Precondition |
 | --- | --- |
-| `approved_for_quote` | 带文化标记的 Commission **必须**已有 `cultural_decision` = `approved` / `conditional` |
-| `scheduled` | 已确认订金（`deposit_received_cents > 0`） |
-| `design_review` | 已分配 Maker |
-| `ready_to_ship` | 已确认尾款（`final_received_cents > 0`） |
-| `shipped` | 必须有物流单号 |
-| `needs_revision` | `revision_count < 2`（防止无限返工） |
+| `approved_for_quote` | A culturally flagged commission **must** already have `cultural_decision` of `approved` or `conditional` |
+| `scheduled` | Deposit confirmed (`deposit_received_cents > 0`) |
+| `design_review` | A maker must be assigned |
+| `ready_to_ship` | Final payment confirmed (`final_received_cents > 0`) |
+| `shipped` | A tracking number is required |
+| `needs_revision` | `revision_count < 2`, preventing unbounded rework loops |
 
-### 9.3 Commission 收款
+### 9.3 Commission payments
 
-`commission_payments` 表对 `(commission_id, type)` 建**唯一索引** `one_payment_stage`，从数据库层面保证订金与尾款各只能确认一次；确认人 `confirmed_by` 外键指向 `users`，满足职责分离与可追溯。
+The `commission_payments` table carries a **unique index** `one_payment_stage` on `(commission_id, type)`, so the database itself guarantees that the deposit and the final payment can each be confirmed only once. `confirmed_by` is a foreign key to `users`, satisfying both segregation of duties and traceability.
 
 ---
 
-## 10. 前端应用
+## 10. Frontend Applications
 
-两个独立 SPA，各自 `npm install` / `npm run dev` / `npm run build`。
+Two independent SPAs, each with its own `npm install` / `npm run dev` / `npm run build`.
 
-### 10.1 商城前台 `frontend/shop`（端口 3000）
+### 10.1 Storefront — `frontend/shop` (port 3000)
 
-| 路由 | 页面 | 访问 |
+| Route | Page | Access |
 | --- | --- | --- |
-| `/` | 首页 | 公开 |
-| `/products` | 商品列表 | 公开 |
-| `/products/:id` | 商品详情 | 公开 |
-| `/cart` | 购物车 | 需登录 |
-| `/checkout` | 结算 | 需登录 |
-| `/login` `/register` `/verify-email` | 认证 | 公开 |
-| `/forgot-password` `/reset-password` | 密码找回 | 公开 |
-| `/me/orders` | 我的订单 | 需登录 |
-| `/me/commissions` `/me/commissions/new` | 我的定制 / 下单向导 | 需登录 |
-| `/me/*` | 账户中心 | 需登录 |
+| `/` | Home | Public |
+| `/products` | Product listing | Public |
+| `/products/:id` | Product detail | Public |
+| `/cart` | Cart | Authenticated |
+| `/checkout` | Checkout | Authenticated |
+| `/login` `/register` `/verify-email` | Authentication | Public |
+| `/forgot-password` `/reset-password` | Password recovery | Public |
+| `/me/orders` | My orders | Authenticated |
+| `/me/commissions` `/me/commissions/new` | My commissions / request wizard | Authenticated |
+| `/me/*` | Account centre | Authenticated |
 
-组件：`Layout`、`ProtectedRoute`、`StatusChip`、`Timeline`、`Modal`、`Stepper`、`Skeleton`、`Toast`，以及 `ui/` 原子组件（`Button` / `Card` / `Input` / `Select`）。
+Shared components: `Layout`, `ProtectedRoute`, `StatusChip`, `Timeline`, `Modal`, `Stepper`, `Skeleton`, `Toast`, plus `ui/` primitives (`Button`, `Card`, `Input`, `Select`).
 
-### 10.2 管理后台 `frontend/admin`（端口 3001）
+### 10.2 Admin console — `frontend/admin` (port 3001)
 
-| 路由 | 页面 |
+| Route | Page |
 | --- | --- |
-| `/login` | 后台登录 |
-| `/users` `/users/:id` | 用户管理 |
-| `/roles` `/roles/:id` | 角色与权限 |
-| `/products` `/products/:id` | 商品管理 |
-| `/orders` `/orders/:id` | 订单管理 |
-| `/commissions` `/commissions/:id` `/commissions/config` | Commission 管理与档期配置 |
-| `/payments` | 支付确认 |
-| `/tickets` `/tickets/:id` | 工单 |
-| `/content` | CMS 页面 |
-| `/audit` | 审计日志 |
+| `/login` | Admin login |
+| `/users` `/users/:id` | User management |
+| `/roles` `/roles/:id` | Roles and permissions |
+| `/products` `/products/:id` | Product management |
+| `/orders` `/orders/:id` | Order management |
+| `/commissions` `/commissions/:id` `/commissions/config` | Commission management and slot configuration |
+| `/payments` | Payment confirmation |
+| `/tickets` `/tickets/:id` | Support tickets |
+| `/content` | CMS pages |
+| `/audit` | Audit log |
 
-组件：`AdminLayout`、`DataTable`、`Modal`、`ProtectedRoute`、`StatusBadge`。
+Shared components: `AdminLayout`, `DataTable`, `Modal`, `ProtectedRoute`, `StatusBadge`.
 
-### 10.3 前端鉴权
+### 10.3 Frontend authorization
 
-两套独立的 token 存储与权限上下文（`store/authStore.jsx` + `store/tokenStore.js`），后台与前台互不共享会话。axios 响应拦截器统一处理 `401` → 清理凭证 → 跳转 `/login`。
+Each app keeps its own token storage and permission context (`store/authStore.jsx` + `store/tokenStore.js`); admin and storefront sessions are never shared. An axios response interceptor handles `401` uniformly by clearing credentials and redirecting to `/login`.
 
 ---
 
-## 11. 测试
+## 11. Testing
 
-### 11.1 Go 单元 / 集成测试
+### 11.1 Go unit and integration tests
 
 ```bash
 cd backend
-go test ./...              # 全部
+go test ./...              # everything
 go test ./internal/middleware/... -v
 go test ./internal/service/... -run TestOrderFSM -v
 go test -race ./...
 ```
 
-覆盖范围：
+Coverage:
 
-| 文件 | 覆盖内容 |
+| File | Covers |
 | --- | --- |
-| `middleware/middleware_test.go` | 鉴权、CORS、限流、安全头 |
-| `middleware/session_test.go` | 会话解析、路由权限注册表、Commission 数据范围 |
-| `service/auth_password_test.go` | 密码策略、哈希 |
-| `service/auth_integration_test.go` | 注册/登录/锁定/刷新全链路 |
-| `service/order_fsm_test.go` | 订单状态机流转矩阵 |
-| `service/order_pricing_test.go` | 价格计算、库存扣减 |
-| `service/order_integration_test.go` | 下单 → 支付 → 状态流转 |
-| `service/commission_fsm_test.go` | Commission 状态机流转矩阵 |
+| `middleware/middleware_test.go` | Auth, CORS, rate limiting, security headers |
+| `middleware/session_test.go` | Session resolution, route permission registry, commission data scope |
+| `service/auth_password_test.go` | Password policy and hashing |
+| `service/auth_integration_test.go` | Register / login / lockout / refresh end to end |
+| `service/order_fsm_test.go` | Order state machine transition matrix |
+| `service/order_pricing_test.go` | Pricing calculation and stock deduction |
+| `service/order_integration_test.go` | Order creation → payment → status transitions |
+| `service/commission_fsm_test.go` | Commission state machine transition matrix |
 
-### 11.2 Bash 集成测试
+### 11.2 Bash integration suite
 
-需后端已启动：
+Requires the backend to be running:
 
 ```bash
 ./tests/test_integration.sh
 ```
 
-10 组用例：公共端点 → 注册与邮箱验证 → 登录 → 当前用户 → 商品管理 → 用户管理 → 角色管理 → 购物车 → **RBAC 越权拦截** → 审计日志。
+Ten groups: public endpoints → registration and email verification → login → current user → product management → user management → role management → cart operations → **RBAC enforcement** → audit logs.
 
-默认凭据：管理员 `admin@fursuit.nz / admin123`，测试顾客 `test@fursuit.nz / testpass123`。
+Default credentials: admin `admin@fursuit.nz / admin123`, test customer `test@fursuit.nz / testpass123`.
 
 ### 11.3 Playwright E2E
 
@@ -566,29 +566,29 @@ cd tests/e2e
 npm install
 npx playwright install chromium
 
-# 需先启动：后端 8080、shop 3000、admin 3001
-npx playwright test                    # 全部三个 project
-npx playwright test --project=api      # 仅 API
+# requires backend 8080, shop 3000 and admin 3001 to be running
+npx playwright test                    # all three projects
+npx playwright test --project=api      # API only
 npx playwright test --project=shop
 npx playwright test --project=admin
-npx playwright test --headed --debug    # 调试
+npx playwright test --headed --debug    # debugging
 ```
 
-| Project | baseURL | 覆盖 |
+| Project | baseURL | Covers |
 | --- | --- | --- |
-| `shop` | `http://localhost:3000` | 商城页面、登录表单、导航 |
-| `admin` | `http://localhost:3001` | 后台登录、仪表盘、侧边栏 |
-| `api` | `http://localhost:8080` | 注册/登录/商品/权限/健康检查/安全响应头（约 30 个用例，串行执行） |
+| `shop` | `http://localhost:3000` | Storefront pages, login form, navigation |
+| `admin` | `http://localhost:3001` | Admin login, dashboard, sidebar |
+| `api` | `http://localhost:8080` | Register/login/products/permissions/health checks/security headers — roughly 30 serialised cases |
 
-配置：`timeout 30s`、`retries 1`、`workers 1`、失败自动截图、重试时记录 trace。
+Configuration: `timeout 30s`, `retries 1`, `workers 1`, automatic screenshots on failure, traces captured on retry.
 
 ---
 
-## 12. 安全与运维
+## 12. Security and Operations
 
-### 12.1 安全响应头
+### 12.1 Security response headers
 
-`SecurityHeadersMiddleware` 为每个响应注入：
+`SecurityHeadersMiddleware` injects the following on every response:
 
 ```
 X-Content-Type-Options: nosniff
@@ -601,82 +601,82 @@ Content-Security-Policy: default-src 'self'
 X-Request-ID: <uuid>          # RequestIDMiddleware
 ```
 
-### 12.2 限流
+### 12.2 Rate limiting
 
-`RateLimitMiddleware` 基于 Redis `INCR` + `EXPIRE` 的固定窗口计数，应用于注册、登录、后台登录、忘记密码。响应头返回 `X-RateLimit-Limit` / `X-RateLimit-Remaining`，超限返回 `429` 与 `Retry-After`。
+`RateLimitMiddleware` implements a fixed-window counter using Redis `INCR` + `EXPIRE`, applied to registration, customer login, admin login and password-reset requests. Responses carry `X-RateLimit-Limit` and `X-RateLimit-Remaining`; exceeding the limit returns `429` with a `Retry-After` header.
 
-### 12.3 暴力破解防护
+### 12.3 Brute-force protection
 
-连续登录失败达 `MAX_LOGIN_ATTEMPTS`（默认 5）次后锁定 `LOCKOUT_DURATION`（默认 15 分钟）。
+After `MAX_LOGIN_ATTEMPTS` consecutive failures (5 by default) the account is locked for `LOCKOUT_DURATION` (15 minutes by default).
 
-### 12.4 文件上传
+### 12.4 File uploads
 
-- 扩展名白名单：`.jpg` `.jpeg` `.png` `.gif` `.webp` `.pdf`
-- 大小上限 `MAX_FILE_SIZE_MB`（默认 20MB），`http.MaxBytesReader` 双重限制
-- 公开图片：按 `YYYY/MM/DD` 归档 + SHA-256 前 16 位命名（内容寻址，天然去重）
-- **私有文件**（`stored_files`）：不落公开路径，下载需签名链接，且校验文件归属
+- Extension allowlist: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.pdf`
+- Size capped by `MAX_FILE_SIZE_MB` (20 MB by default), enforced again via `http.MaxBytesReader`
+- Public images are archived by `YYYY/MM/DD` and named with the first 16 hex characters of their SHA-256 digest — content-addressed, so duplicates collapse naturally
+- **Private files** (`stored_files`) never land in a public path; downloads require a signed link and are checked against the file's owner
 
-### 12.5 邮件 Outbox
+### 12.5 Email outbox
 
-`EmailService.QueueEmail` 只写 `email_outboxes` 表，后台 goroutine **每 30 秒**调用 `ProcessOutbox()` 投递 SMTP。好处：SMTP 故障不阻塞业务事务，重启不丢邮件。
+`EmailService.QueueEmail` only writes to the `email_outboxes` table; a background goroutine calls `ProcessOutbox()` every 30 seconds to deliver over SMTP. The benefit: an SMTP outage never blocks a business transaction, and a restart never loses queued mail.
 
-### 12.6 优雅退出
+### 12.6 Graceful shutdown
 
-监听 `SIGINT` / `SIGTERM`，`srv.Shutdown` 最多等待 5 秒完成存量请求。
+`SIGINT` / `SIGTERM` are handled, and `srv.Shutdown` allows up to 5 seconds for in-flight requests to complete.
 
-### 12.7 数据库连接池
+### 12.7 Connection pooling
 
-`SetMaxIdleConns(10)` / `SetMaxOpenConns(100)` / `SetConnMaxLifetime(1h)`。
-
----
-
-## 13. 已知问题
-
-**Commission 状态机测试未通过。** `go test ./internal/service/` 中 `TestCommissionFSM_CanTransition` 与 `TestCommissionFSM_TransitionMatrix_Completeness` 失败（32 个子用例）。
-
-原因：测试期望的 V4 状态机比 `commission_fsm.go` 中 `commissionAllowedTransitions` 更宽，缺少这些状态与流转：
-
-- 缺失状态：`reviewing`、`deposit_received`、`in_progress`、`stage_review`、`stage_approved`、`final_review`、`revision_requested`、`disputed`
-- 缺失流转：`final_review → disputed`、`revision_requested → disputed`、`disputed → in_progress`、`disputed → cancelled`
-
-注意 `006_commission_workflow.sql` 已把这些旧状态统一迁移为 `on_hold`，但**状态机本身尚未同步扩展**。修复方向二选一：
-
-1. 按 V4 需求文档补全 `commissionAllowedTransitions`（含 `disputed` 争议处理分支）
-2. 若确认 V4 已废弃这些状态，则同步更新测试用例
-
-其余模块测试通过（`internal/middleware` 全绿）。
+`SetMaxIdleConns(10)`, `SetMaxOpenConns(100)`, `SetConnMaxLifetime(1h)`.
 
 ---
 
-## 14. 三阶段路线图
+## 13. Known Issues
 
-| 阶段 | 范围 | 状态 |
+**The commission state machine tests do not pass.** In `go test ./internal/service/`, `TestCommissionFSM_CanTransition` and `TestCommissionFSM_TransitionMatrix_Completeness` fail with 32 failing subtests.
+
+Cause: the tests expect a broader V4 state machine than the `commissionAllowedTransitions` map in `commission_fsm.go` actually declares. Missing states and transitions:
+
+- Missing states: `reviewing`, `deposit_received`, `in_progress`, `stage_review`, `stage_approved`, `final_review`, `revision_requested`, `disputed`
+- Missing transitions: `final_review → disputed`, `revision_requested → disputed`, `disputed → in_progress`, `disputed → cancelled`
+
+Note that `006_commission_workflow.sql` already folds these legacy states into `on_hold`, but **the state machine itself has not been extended to match**. Two ways to resolve:
+
+1. Extend `commissionAllowedTransitions` to match the V4 requirements document, including a `disputed` branch
+2. If those states are confirmed as retired in V4, update the test expectations instead
+
+All other packages pass; `internal/middleware` is fully green.
+
+---
+
+## 14. Three-Phase Roadmap
+
+| Phase | Scope | Status |
 | --- | --- | --- |
-| **阶段一**：可上线接单的 MVP 闭环 | 认证 + RBAC、商品与库存、购物车、订单、银行转账人工确认、Commission 申请与报价、工单、CMS、审计、文化筛查骨架 | 代码已实现 |
-| **阶段二**：运营、支付、物流与合规自动化 | 自动支付网关、物流单号自动生成、退款流程、隐私请求（Privacy Act）自动化、文化审核证据链 | 部分实现 |
-| **阶段三**：规模化、增长与智能运营 | 多渠道营销、数据看板、复购与会员体系、智能推荐 | 未开始 |
+| **Phase 1** — Launchable MVP closed loop | Authentication + RBAC, products and inventory, cart, orders, bank transfer with manual confirmation, commission intake and quoting, tickets, CMS, audit, cultural screening skeleton | Implemented |
+| **Phase 2** — Operations, payments, logistics and compliance automation | Payment gateway integration, automatic shipping labels, refund workflow, automated privacy requests (Privacy Act), cultural review evidence chain | Partially implemented |
+| **Phase 3** — Scale, growth and intelligent operations | Multi-channel marketing, analytics dashboards, repurchase and loyalty programmes, recommendations | Not started |
 
-阶段一**明确不包含**：真实信用卡支付、自动物流标签、复杂营销工具、3D 配置器——但已通过"银行转账 + 人工确认""手工物流单号"提供可运营兜底，保证闭环不断点。
+Phase 1 **explicitly excludes** real credit-card processing, automatic shipping labels, sophisticated marketing tooling and a 3D configurator. Instead it provides operable fallbacks — bank transfer with manual confirmation, hand-entered tracking numbers — so the business loop never breaks.
 
-**平台长期不包含**：线下 POS、二手交易撮合、多商户 Marketplace、未经审核自动生成 Māori 文化图样、存储完整信用卡信息。
+**Permanently out of scope:** offline POS, second-hand marketplace matching, multi-vendor marketplace functionality, auto-generated Māori cultural artwork without review, and storage of full card numbers.
 
 ---
 
-## 15. 法律与文化合规
+## 15. Legal and Cultural Compliance
 
-代码实现对应的合规基线（完整条款见需求文档第 13 章）：
+The system implements the following compliance baseline; the authoritative wording lives in Chapter 13 of the requirements document.
 
-| 领域 | 系统实现 |
+| Area | Implementation |
 | --- | --- |
-| 隐私 | 不存储完整信用卡号；私有文件签名链接 + 归属校验；`privacy_officer` 角色 + `privacy_requests.manage` 权限处理数据访问请求 |
-| Māori 文化 | `cultural_flag` / `cultural_decision` 字段；`cultural_reviewer` 角色；未获文化审核通过**无法**进入 `approved_for_quote` |
-| 审计 | `audit_logs` 表 + `GET /admin/audit`；状态流转写 `*_status_history`；`request_id` 全链路追踪 |
-| 职责分离 | `maker` 无收款确认权；角色-权限映射在数据库层可审计 |
+| Privacy | Full card numbers are never stored; private files use signed links with ownership checks; a `privacy_officer` role plus the `privacy_requests.manage` permission handle data-access requests |
+| Māori culture | `cultural_flag` and `cultural_decision` columns; a `cultural_reviewer` role; a commission **cannot** reach `approved_for_quote` without cultural approval |
+| Audit | An `audit_logs` table exposed at `GET /admin/audit`; every transition appends to `*_status_history`; a `request_id` threads through the whole request path |
+| Segregation of duties | `maker` cannot confirm payments; role-permission mappings are auditable at the database layer |
 
-> 本仓库将官方规则转换为系统要求，但**不替代**新西兰律师、税务师或文化顾问的专业意见。
+> This repository translates official rules into system requirements. It does **not** replace professional advice from New Zealand lawyers, accountants or cultural advisors.
 
 ---
 
-## 16. 许可
+## 16. License
 
-内部项目，暂未指定开源许可证。需求文档 `NZ_Fursuit_Platform_Three_Phase_Closed_Loop_Requirements_RBAC_First_v4.0.docx` 为项目唯一事实来源，代码与文档冲突时以文档为准。
+Internal project; no open-source license has been designated. The requirements document `NZ_Fursuit_Platform_Three_Phase_Closed_Loop_Requirements_RBAC_First_v4.0.docx` is the single source of truth — where code and documentation disagree, the document wins.
