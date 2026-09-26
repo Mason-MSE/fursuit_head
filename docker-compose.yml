@@ -1,0 +1,47 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: fursuit_platform
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/migrations/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./backend/migrations/002_add_new_tables.sql:/docker-entrypoint-initdb.d/02-extra.sql:ro
+      - ./backend/migrations/003_rbac_sessions.sql:/docker-entrypoint-initdb.d/03-rbac.sql:ro
+      - ./backend/migrations/004_order_integrity.sql:/docker-entrypoint-initdb.d/04-orders.sql:ro
+      - ./backend/migrations/005_private_files.sql:/docker-entrypoint-initdb.d/05-files.sql:ro
+      - ./backend/migrations/006_commission_workflow.sql:/docker-entrypoint-initdb.d/06-commissions.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:v1.20
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
+volumes:
+  mysql_data:
+  redis_data:

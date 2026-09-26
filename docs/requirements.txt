@@ -1,0 +1,942 @@
+新西兰兽装头套定制平台
+三阶段完整闭环业务与软件需求规格说明书
+RBAC First · Go 三层架构 · React 双前端 · MySQL · Redis
+
+阶段一可上线接单的业务闭环 | 阶段二支付、物流与合规自动化 | 阶段三规模化、增长与智能运营
+
+核心交付原则每个阶段都必须是可以部署、可以运营、可以验收的完整业务闭环；不得以“后续再补”的方式留下无法完成订单、无法收款、无法发货或无法售后的断点。RBAC、资源所有权校验和审计日志从第一阶段即作为平台基础能力。
+
+
+项目项 | 内容
+文档版本 | V4.0
+文档日期 | 2026年7月
+适用团队 | 产品、UI/UX、Golang后端、React前端、QA、DevOps、运营、合规
+技术栈 | Golang + Gin/GORM；React；MySQL；Redis；对象存储；邮件服务
+前端划分 | 商城前台与管理后台独立部署、独立路由、独立权限上下文
+法律说明 | 文档将官方规则转换为系统要求，但不替代新西兰律师、税务师或文化顾问意见
+
+
+修订记录
+版本 | 日期 | 主要变化
+V3.0 | 2026-07 | 加入新西兰法律、Māori文化、无障碍和可持续要求
+V4.0 | 2026-07 | 重构为RBAC优先的三阶段闭环方案；补齐状态机、页面交互、数据、API、验收和上线边界
+
+目录
+1. 文档目标与项目边界
+2. 总体架构与开发原则
+3. RBAC优先的身份、权限与审计设计
+4. 共享业务领域模型与状态机
+5. 全局UI/UX与交互规范
+6. 阶段一：可上线接单的MVP闭环
+7. 阶段二：运营、支付、物流与合规自动化
+8. 阶段三：规模化、增长与智能运营
+9. 页面与路由总清单
+10. API与事件清单
+11. 数据模型与迁移策略
+12. 安全、性能、可用性和运维要求
+13. 新西兰法律、文化与无障碍要求
+14. 测试策略、验收与Definition of Done
+15. 实施节奏、团队和上线门槛
+16. 风险、待决策项与变更控制
+附录A：权限目录
+附录B：状态流转矩阵
+附录C：通知模板清单
+附录D：官方参考资料
+
+1. 文档目标与项目边界
+1.1 文档目标
+把品牌官网、现货商城、Commission定制、制作排期、付款、发货、售后和后台运营转化为可开发、可测试、可上线的系统需求。
+将RBAC、资源所有权、审批分离和审计作为第一优先级，避免只在前端隐藏菜单而后端接口仍可越权。
+明确三阶段的业务边界；每个阶段必须具备完整闭环、失败处理、人工兜底和验收标准。
+为Go后端、React商城、React管理后台、MySQL、Redis及第三方集成提供统一的数据、接口和状态约定。
+1.2 产品定位
+面向新西兰及国际客户的兽装头套（Fursuit Head / Kemono Head）品牌官网和电商定制平台。系统支持：
+现货产品 Ready to Ship。
+标准配置定制 Made to Order。
+完全Commission定制：申请、审核、报价、订金、制作、阶段确认、尾款、发货和售后。
+维修、翻新和可替换部件服务。
+Māori文化敏感内容的筛查、审核与证据留存。
+1.3 范围内与范围外
+类别 | 范围
+范围内 | 独立商城前台、独立管理后台、统一API、认证与RBAC、商品/库存、购物车/订单、Commission、报价、付款、制作、物流、售后、CMS、审计、隐私及文化审核。
+阶段一不包含 | 真实信用卡支付、自动物流标签、复杂营销、3D配置器；但必须提供银行转账/人工确认、手工物流单号等可运营兜底。
+平台长期不包含 | 线下POS、二手交易撮合、多商户Marketplace、未经审核自动生成Māori文化图样、存储完整信用卡信息。
+
+1.4 成功指标
+指标 | 阶段一目标 | 阶段二目标 | 阶段三目标
+业务闭环 | 现货和Commission均可从注册到售后完成 | 支付/物流/退款/隐私/文化流程自动化 | 配置、采购、营销和分析闭环
+系统可用性 | 月可用性≥99.5% | ≥99.8% | ≥99.9%
+权限 | 100%管理接口后端鉴权 | 高权限MFA与职责分离 | 周期权限审计与异常访问检测
+性能 | 核心页面LCP目标≤2.5秒；API P95≤500ms | 缓存和异步任务优化 | 全球CDN、读写扩展与分析仓库
+客户透明度 | 订单/Commission进度100%可查 | 自动通知和物流同步 | 预测完成时间与自助配置
+
+
+2. 总体架构与开发原则
+2.1 技术架构
+层级 | 实现要求
+商城前台 | React独立应用；面向游客与客户；仅调用公开/客户API；不包含后台代码和管理路由。
+管理后台 | React独立应用；单独域名或子域名；登录后加载权限；菜单可见性仅用于体验，不能代替后端鉴权。
+API层 | Golang + Gin；Handler负责协议、参数、响应和中间件；不得直接访问数据库。
+Service层 | 业务规则、状态机、事务边界、权限上下文、幂等与领域事件。
+Repository层 | 接口抽象 + GORM实现；MySQL持久化；禁止业务层拼接SQL。
+Redis | 缓存、限流、分布式锁、短期令牌、幂等键和异步任务协调；Redis不可作为订单/付款唯一事实源。
+文件 | 开发环境本地存储；生产环境对象存储；数据库保存元数据、哈希、归属和访问级别。
+邮件 | 开发Mailpit；生产SMTP/SES/SendGrid；采用Outbox和重试，避免业务事务成功但邮件丢失。
+
+2.2 后端代码结构
+建议目录：
+cmd/apiinternal/handlerinternal/middlewareinternal/serviceinternal/repositoryinternal/modelinternal/dtointernal/policyinternal/eventinternal/jobinternal/configinternal/platform/{db,redis,mail,storage,payment,shipping}migrationstests
+2.3 开发硬约束
+所有管理端和客户敏感接口必须经过认证、权限和资源所有权三层判断。
+订单、库存、付款、退款、报价接受、制作阶段确认等操作必须具备事务或幂等保护。
+状态变更必须由Service中的状态机执行，禁止Handler直接更新状态字段。
+所有金额使用整数最小货币单位（cents），并保存currency、tax_rate和价格快照。
+所有时间数据库使用UTC；界面按用户/业务时区显示，默认Pacific/Auckland。
+所有外部Webhook先验签、去重、落库，再异步处理；不得相信客户端回传“支付成功”。
+阶段功能可采用人工兜底，但必须有清晰状态、责任人、操作记录和客户可见结果。
+
+3. RBAC优先的身份、权限与审计设计
+RBAC FirstRBAC不是后台菜单功能，而是贯穿数据库、API、Service、前端路由、审计和测试的基础设施。阶段一必须完成权限模型和核心权限测试，后续阶段仅增加资源和权限，不重构认证基础。
+
+3.1 身份与账户状态
+对象 | 状态/规则
+用户状态 | pending_email → active；可进入 suspended / locked / deleted。只有active用户可登录。
+邮箱验证 | 一次性随机令牌，仅保存哈希；默认24小时失效；重复点击返回幂等成功；重发需限流。
+密码 | bcrypt/Argon2id；最少12位；禁止常见弱密码；重置令牌单次使用；密码修改后撤销全部会话。
+会话 | 短期Access Token + 可撤销Refresh Session；服务端保存session id、设备、IP摘要、过期时间。
+管理员安全 | 阶段一强制初始密码修改；高权限操作二次确认；阶段二起Admin/Super Admin强制TOTP MFA。
+登录防护 | Redis限流；连续失败锁定；错误提示不泄露邮箱是否存在；成功和失败均写安全日志。
+
+3.2 角色定义
+角色代码 | 名称 | 职责边界
+customer | 客户 | 管理自己的资料、地址、购物车、订单、Commission、文件、确认和售后。
+support | 客服 | 处理客户咨询、订单协助、Commission资料补充；无角色管理和退款审批权。
+maker | 制作者 | 查看被分配Commission、更新制作阶段、上传进度；不查看不必要的付款信息。
+warehouse | 仓储/发货 | 库存调整、拣货、质检、物流；不能管理价格、退款和用户角色。
+finance | 财务 | 确认付款、发起/审批退款、导出税务数据；不能修改制作内容。
+cultural_reviewer | 文化审核员 | 查看触发审核的设计、来源和许可；给出批准/条件批准/拒绝。
+privacy_officer | 隐私负责人 | 处理访问/更正/删除请求和泄露事件；最小化查看业务数据。
+content_editor | 内容编辑 | 管理首页、FAQ、政策和多语言内容；不能管理订单和用户。
+admin | 管理员 | 日常全局运营、用户角色分配、配置；不能修改Super Admin或系统密钥。
+super_admin | 超级管理员 | 系统最高权限、角色权限模型和关键设置；账号数量应受限。
+
+3.3 权限命名与判定顺序
+权限代码统一为 resource.action，例如 products.read、orders.update、payments.confirm、roles.assign。
+权限判定顺序：账号状态 → 会话有效 → 显式权限 → 资源作用域（own / assigned / all）→ 状态是否允许该动作 → 二次审批条件。
+客户“查看自己的订单”不是简单orders.read，而是orders.read_own；Maker使用commissions.read_assigned。
+高风险权限拆分为查看、执行与审批，例如 refunds.request、refunds.approve、refunds.execute。
+角色是权限集合；业务代码不得写死“只有admin”，应检查权限代码和作用域。
+3.4 关键权限矩阵
+
+模块 | Customer | Support | Maker | Warehouse | Finance | Culture | Privacy | Content | Admin | Super Admin
+个人资料 | Own | R/U | - | - | - | - | 必要时 | - | R/U | 全
+商品/分类 | R | R | R | R | R | R | R | C/R/U | C/R/U/D | 全
+库存 | - | R | R | C/R/U | R | - | - | - | C/R/U | 全
+订单 | Own | R/U | R分配 | R/U发货 | R/U付款 | - | 必要时 | - | 全 | 全
+付款/退款 | Own摘要 | R摘要 | - | - | 确认/审批 | - | 必要时 | - | 监督 | 全
+Commission | Own | R/U | R/U分配 | - | 付款摘要 | 审核内容 | 必要时 | - | 全 | 全
+报价 | Own确认 | C/R/U | R | - | R | 文化条件 | - | - | 全 | 全
+制作进度 | Own | R | C/R/U分配 | R质检 | R | R条件 | - | - | 全 | 全
+物流 | Own | R | R | C/R/U | R | - | - | - | 全 | 全
+售后 | Own | C/R/U | R | R/U | R/U退款 | - | 必要时 | - | 全 | 全
+文化审核 | Own结果 | R | R条件 | - | - | C/R/U/Approve | - | - | 管理 | 全
+隐私请求 | Own | 创建转交 | - | - | - | - | C/R/U/Close | - | 监督 | 全
+用户/角色 | Own | R有限 | - | - | - | - | - | - | C/R/U/Assign | 全
+审计日志 | Own安全记录 | R有限 | Own | Own | R财务 | Own | 全隐私 | Own | 全 | 全
+系统设置 | - | - | - | - | - | - | - | 内容设置 | 业务设置 | 全
+
+
+3.5 权限管理界面与交互
+角色列表显示角色代码、名称、用户数、权限数、系统角色标记、最后修改人和时间。
+角色编辑采用“模块分组 + 操作复选框 + 作用域选择”布局；高风险权限显示红色警告。
+保存前展示权限差异预览；移除自身最后一个Super Admin权限必须阻止。
+角色或权限变化后撤销受影响用户的Refresh Session，下一次请求重新加载权限。
+用户详情页支持分配多个角色，但必须提示最终合并权限；禁止直接给用户散落权限，例外必须有到期时间和审批记录。
+3.6 RBAC验收标准
+未认证访问管理接口返回401；已认证但无权限返回403；不存在资源返回404，避免枚举。
+Customer无法通过修改URL读取他人订单、Commission、地址或文件。
+Maker只能读取和更新被分配的Commission，不能确认付款、退款或分配角色。
+Support可以请求补充资料，但不能批准退款或文化审核。
+所有角色、权限、用户状态和高风险业务状态变化均产生不可篡改审计记录。
+自动化测试覆盖每个受保护路由至少一个允许和一个拒绝用例。
+
+4. 共享业务领域模型与状态机
+4.1 领域对象
+领域 | 核心对象 | 事实来源
+身份权限 | User、Session、Role、Permission、AuditLog | MySQL；Redis仅缓存权限版本/限流
+商品库存 | Category、Product、Variant、InventoryItem、InventoryMovement | MySQL库存流水
+交易 | Cart、Order、OrderItem、Payment、Refund、Shipment | MySQL；支付网关事件留痕
+定制 | CommissionApplication、File、Quote、QuoteItem、CommissionOrder、Milestone、ChangeRequest | MySQL + 对象存储
+售后 | AfterSalesCase、CaseMessage、CaseResolution | MySQL
+合规 | Consent、CulturalReview、PrivacyRequest、BreachIncident、ContentApproval | MySQL
+运营 | CapacitySlot、Waitlist、Material、Supplier、PurchaseOrder、Campaign、Metric | MySQL/分析存储
+
+4.2 订单状态机
+状态 | 允许进入方式 | 客户可见操作 | 后台操作
+awaiting_payment | 创建订单 | 查看付款说明、取消 | 确认付款、取消
+paid | 支付Webhook或人工确认 | 查看收据 | 开始处理
+processing | 仓储接单 | 查看进度 | 拣货、质检
+ready_to_ship | 质检通过 | 确认地址 | 创建物流
+shipped | 录入/同步单号 | 跟踪物流 | 更新物流异常
+delivered | 物流签收/人工确认 | 确认收货、发起售后 | 关闭或处理售后
+completed | 超过确认期或客户确认 | 下载发票 | 归档
+cancelled | 付款前取消/后台取消 | 查看原因 | 释放库存
+refund_pending / refunded | 售后批准 | 查看退款进度 | 执行退款、记录结果
+
+4.3 Commission状态机
+状态 | 触发 | 客户交互
+draft | 客户保存草稿 | 编辑、上传文件
+submitted | 客户提交 | 只读、等待审核
+needs_info | 客服要求补充 | 补充并重新提交
+screening | 完整度/版权/文化筛查 | 查看状态
+cultural_review | 触发文化审核 | 补充来源/许可
+approved_for_quote | 可报价 | 等待报价
+quoted | 报价已发送 | 接受/拒绝/提问
+deposit_pending | 接受报价 | 支付订金
+scheduled | 订金确认并锁档期 | 查看排期
+design_review | 设计方案 | 批准/提交有限修改
+materials | 材料采购 | 查看进度
+production | 制作中 | 查看阶段照片
+customer_review | 关键阶段确认 | 确认/提出范围内问题
+quality_check | 质检 | 查看状态
+final_payment_pending | 尾款待支付 | 支付尾款
+ready_to_ship | 可发货 | 确认地址
+shipped | 已发货 | 跟踪
+completed | 签收且售后期结束 | 评价/维修
+on_hold | 等待客户/供应链 | 处理阻塞事项
+cancelled/rejected | 规则触发 | 查看原因和退款结果
+
+4.4 状态机通用规则
+状态流转必须校验当前状态、目标状态、操作者权限、必需字段和前置业务事件。
+每次流转写入status_history：from_status、to_status、actor、reason、metadata、created_at。
+禁止直接删除已进入交易或制作流程的数据；使用取消、归档或软删除。
+客户确认和后台确认均采用幂等接口，重复提交不产生重复付款、库存或通知。
+回退状态必须显式建模，例如设计确认退回needs_revision，而非任意修改状态。
+
+5. 全局UI/UX与交互规范
+5.1 两套前端的边界
+应用 | 入口与风格 | 关键要求
+商城前台 | www域名；品牌化、大图作品、紫色主色、适度新西兰地域元素 | 游客可浏览；客户流程移动端优先；不加载任何后台菜单或管理API。
+管理后台 | admin子域名；信息密度高、左侧导航、表格/看板/详情抽屉 | 必须登录；按权限加载菜单；高风险操作二次确认；支持批量和审计。
+
+5.2 通用组件
+组件 | 交互要求
+Button | Primary/Secondary/Tertiary/Danger；提交中禁用并显示进度；禁止重复点击。
+Form | 标签常驻；必填*；即时校验与提交校验并存；错误定位到首个字段并兼容屏幕阅读器。
+Upload | 拖放+选择；显示格式/大小；上传进度、失败重试、删除；敏感文件使用签名URL。
+Stepper | Commission多步向导显示当前、完成和错误步骤；草稿自动保存；刷新后恢复。
+Status Chip | 状态必须同时使用颜色、文字和图标；不得仅靠颜色。
+Timeline | 订单和Commission显示时间、操作者类型、客户可见说明；内部备注不对客户显示。
+Table | 排序、筛选、分页、列设置、空状态；批量操作需权限并二次确认。
+Modal/Drawer | 破坏性操作需输入原因；移动端使用全屏Drawer；Esc关闭但未保存时提示。
+Toast/Alert | 成功短暂显示；错误持续至关闭；服务端字段错误映射回具体字段。
+Skeleton/Empty/Error | 加载、空数据、权限不足、网络失败、部分失败均有独立状态。
+
+5.3 响应式与无障碍
+断点建议：<640手机、640–1023平板、≥1024桌面；结算和Commission在手机上保持单列。
+键盘可完成注册、商品购买、Commission提交、客户确认和后台核心操作；焦点顺序与可见性可验收。
+正文对比度目标4.5:1，大字3:1；交互目标至少24×24 CSS px，推荐44×44。
+图片需Alt；装饰图Alt为空；视频提供字幕或文字说明；错误与状态使用ARIA live。
+产品目标采用WCAG 2.2 AA；私人商业网站以产品质量基线执行，并非宣称政府标准强制适用。
+5.4 新西兰与Māori文化呈现
+可以使用“Aotearoa New Zealand”、Kia ora等经过审核的本地化内容，但不得暗示某iwi、hapū或机构背书。
+蕨叶、山景等地域视觉不等同于Māori文化许可；涉及te reo、tā moko、whakairo、mātauranga、iwi/hapū标识等内容需触发审核。
+保留te reo Māori长音符号；翻译必须由合适人员复核；不得把文化元素作为随意组合的装饰模板。
+文化审核结论、条件和来源说明必须能追溯，客户只看到必要且尊重的解释。
+
+6. 阶段一：可上线接单的MVP闭环
+阶段一目标即使不接入信用卡和自动物流，系统也必须能够通过银行转账/人工确认、人工录入物流单号完成真实订单和Commission，从注册直到售后无断点。建议周期10–12周。
+
+6.1 阶段一闭环清单
+闭环 | 起点 | 终点 | 人工兜底
+账户闭环 | 注册 | 邮箱验证、登录、重置密码、注销会话 | Mailpit/SMTP重发、管理员解锁
+现货交易闭环 | 浏览商品 | 下单、确认付款、发货、签收、售后关闭 | 银行转账、人工确认付款和物流
+Commission闭环 | 提交申请 | 审核、报价、订金、制作、尾款、发货、售后 | 人工报价、人工确认付款、阶段照片
+权限闭环 | 创建后台用户 | 分配角色、访问控制、审计和撤销会话 | Super Admin手工管理
+内容合规闭环 | 发布产品/政策 | 审核后上线、保留版本 | 管理员批准和回滚
+
+6.2 商城前台详细需求
+P1-AUTH-001  注册、邮箱确认与登录
+阶段 | 阶段一 | 角色 | 游客、客户
+权限 | auth.register / auth.login | 接口 | POST /api/v1/auth/register 等
+需求说明：用户使用邮箱和密码注册，账号进入pending_email；确认邮箱后才可登录和结算。
+界面与交互：注册页包含姓名、邮箱、密码、确认密码、条款和隐私同意；提交后进入“检查邮箱”页；验证链接成功显示激活结果并提供登录按钮；登录支持忘记密码。
+业务规则：验证令牌单次使用、24小时失效；注册/重发/登录均限流；不得自动勾选营销同意。
+验收标准：新用户未验证不能登录；验证后可登录；重复点击验证链接不报系统错误；密码重置后旧会话全部失效。
+
+P1-HOME-001  首页与Commission状态
+阶段 | 阶段一 | 角色 | 游客、客户
+权限 | content.read / commission_settings.read | 接口 | GET /public/commission-settings
+需求说明：展示品牌、现货入口、作品、起步价格、开放状态、剩余名额和预计排期。
+界面与交互：首屏包含主视觉、Request a Quote、Shop Ready to Ship；状态卡显示Open/Closed/Waitlist、名额、预计开始和完成区间；所有时间使用区间而非绝对承诺。
+业务规则：状态由后台配置；关闭时按钮跳转到等待通知/说明，不允许提交新申请；营销文案不得夸大交期或环保声明。
+验收标准：后台修改状态后前台在缓存TTL内更新；Closed状态无法绕过API提交。
+
+P1-SHOP-001  商品浏览、搜索与详情
+阶段 | 阶段一 | 角色 | 游客、客户
+权限 | products.read | 接口 | GET /public/products
+需求说明：支持分类、关键词、价格和库存筛选，展示现货及标准产品。
+界面与交互：列表卡显示主图、名称、价格NZD、库存状态、风格；详情页包含图库、尺寸、材料、护理、安全、配送和退换说明。
+业务规则：只展示published商品；价格、GST显示、库存和预计发货时间必须来自后端；售罄不可加入购物车。
+验收标准：筛选结果正确；商品草稿不可公开访问；库存0时按钮禁用且API拒绝。
+
+P1-CART-001  购物车、地址与订单创建
+阶段 | 阶段一 | 角色 | 客户
+权限 | cart.manage_own / orders.create | 接口 | POST /cart/items, POST /orders
+需求说明：已验证客户可添加商品、修改数量、填写地址并创建订单。
+界面与交互：购物车显示小计、运费估算、GST说明和总计；结算分为地址→配送→确认；订单创建成功进入付款说明页。
+业务规则：订单创建使用事务锁定库存；价格按订单快照保存；重复提交使用Idempotency-Key；阶段一支付方式为银行转账。
+验收标准：并发下单不会超卖；刷新后购物车保留；订单号唯一；创建后库存进入reserved。
+
+P1-PAY-001  银行转账与人工付款确认
+阶段 | 阶段一 | 角色 | 客户、财务、管理员
+权限 | payments.confirm | 接口 | POST /admin/payments/{id}/confirm
+需求说明：系统展示银行转账说明，客户可上传付款凭证，财务人工确认。
+界面与交互：付款页显示订单号、应付金额、账户信息、备注格式和到期时间；后台付款详情显示凭证、金额、确认按钮和原因。
+业务规则：确认付款必须由payments.confirm权限执行；金额不符可记录partial或needs_review；操作写审计；超时未付可取消并释放库存。
+验收标准：财务确认后订单进入paid并发送收据邮件；重复确认不重复增加金额；取消释放库存。
+
+P1-COM-001  Commission六步申请向导
+阶段 | 阶段一 | 角色 | 客户
+权限 | commissions.create_own | 接口 | POST /commissions, POST /commissions/{id}/submit
+需求说明：收集角色、风格、尺寸、功能、预算、日期、参考图和权利声明。
+界面与交互：步骤1角色信息；2风格与外观；3尺寸与舒适要求；4功能选项；5预算/日期；6文件、版权及提交确认。支持自动保存草稿和返回编辑。
+业务规则：仅验证邮箱用户可提交；文件JPG/PNG/WebP/PDF；单文件和总大小可配置；用户确认拥有或获准使用参考设计；检测文化关键词/标记只作为筛查，不自动裁决。
+验收标准：草稿可恢复；缺失必填字段定位准确；提交后编号唯一且不可直接修改，需进入needs_info流程。
+
+P1-QUOTE-001  申请审核、报价与接受
+阶段 | 阶段一 | 角色 | Support、Admin、客户
+权限 | quotes.create / quotes.send / quotes.accept_own | 接口 | POST /admin/commissions/{id}/quotes; POST /quotes/{id}/accept
+需求说明：客服审核完整性，创建报价；客户在线接受或拒绝。
+界面与交互：后台详情分为客户信息、角色/文件、审核、报价、历史；报价编辑器包含项目、数量、单价、税、订金比例、预计时间和条款；客户页显示版本与有效期。
+业务规则：报价发送后不可原地修改，只能创建新版本并使旧版本superseded；客户接受时保存条款快照；报价过期不可接受。
+验收标准：客户接受有效报价后生成deposit_pending；拒绝记录原因；新版本不会覆盖旧记录。
+
+P1-PROD-001  Commission排期与制作进度
+阶段 | 阶段一 | 角色 | Admin、Maker、客户
+权限 | commissions.read_assigned / milestones.update_assigned | 接口 | PATCH /admin/commissions/{id}/milestones/{mid}
+需求说明：订金确认后分配Maker和计划时间，Maker更新里程碑并上传进度。
+界面与交互：后台看板列：Scheduled、Design、Materials、Production、Customer Review、QC、Final Payment、Ready to Ship；详情显示步骤条、文件和内部备注。
+业务规则：Maker只能更新被分配记录；关键里程碑可设客户确认；内部备注绝不显示前台；延期必须填写原因和新的时间区间。
+验收标准：客户可见进度与后台一致；未确认关键阶段不能进入下一状态；所有状态变化有历史。
+
+P1-ORDER-001  拣货、发货与客户跟踪
+阶段 | 阶段一 | 角色 | Warehouse、Support、客户
+权限 | shipments.create | 接口 | POST /admin/orders/{id}/shipments
+需求说明：已付款订单和已付尾款Commission可进入发货流程。
+界面与交互：后台发货页展示地址、商品、包装检查、承运商、单号、预计到达；客户订单页显示物流卡和时间线。
+业务规则：只有paid/ready_to_ship可发货；单号可人工录入；发货后地址锁定；修改必须审计并通知。
+验收标准：录入单号后状态shipped、客户收到邮件；未付款订单不能发货。
+
+P1-AFTER-001  基础售后闭环
+阶段 | 阶段一 | 角色 | 客户、Support、Finance、Admin
+权限 | aftersales.create_own / aftersales.manage | 接口 | POST /aftersales
+需求说明：客户对已发货订单或Commission发起问题，客服处理维修、替换或退款建议。
+界面与交互：客户选择订单项、问题类型、说明和图片；后台显示SLA、沟通记录、解决方案和关闭原因。
+业务规则：不得以“定制商品一律不退”排除法定权利；阶段一退款可通过线下方式执行并记录参考号；解决方案需客户确认或记录拒绝。
+验收标准：售后可从open到resolved/closed；退款记录关联订单和审计；客户可查看结论。
+
+P1-ACCOUNT-001  客户中心
+阶段 | 阶段一 | 角色 | 客户
+权限 | *.read_own | 接口 | GET /me/orders, /me/commissions
+需求说明：集中查看资料、地址、订单、付款、Commission、报价、文件、确认和售后。
+界面与交互：顶部概览卡；左侧/移动端标签导航；每个详情页有状态条、时间线和下一步操作。
+业务规则：所有查询强制user_id所有权；敏感文件通过短期签名URL；客户不能看到内部备注或其他客户数据。
+验收标准：直接更改ID访问他人资源返回404；当前待办清晰可见。
+
+6.3 管理后台详细需求
+P1-ADM-001  后台登录、导航与权限上下文
+阶段 | 阶段一 | 角色 | 后台角色
+权限 | auth.admin_login | 接口 | POST /admin/auth/login
+需求说明：后台独立登录入口，加载当前用户角色和权限。
+界面与交互：登录后左侧菜单按权限生成；顶部显示账号、环境、通知；403页面提供返回入口；高风险按钮需要再确认。
+业务规则：后台不得共享商城LocalStorage Token；推荐HttpOnly安全Cookie或受控Token存储；权限版本变化后强制重新认证。
+验收标准：无权限菜单不可见，直接访问路由仍被API拒绝；退出后会话失效。
+
+P1-ADM-002  商品、分类与库存管理
+阶段 | 阶段一 | 角色 | Admin、Content、Warehouse
+权限 | products.write / inventory.adjust | 接口 | /admin/products, /admin/inventory
+需求说明：创建/编辑商品、图库、变体、库存和发布状态。
+界面与交互：商品编辑分基本信息、价格、库存、媒体、护理/安全、SEO、发布；保存草稿和发布分开。
+业务规则：发布需必填价格、主图、尺寸、护理安全、库存策略；库存变更通过movement记录，不直接覆盖无历史。
+验收标准：草稿不公开；每次调整可追溯；负库存被阻止。
+
+P1-ADM-003  订单、Commission和报价工作台
+阶段 | 阶段一 | 角色 | Support、Maker、Warehouse、Finance、Admin
+权限 | orders.*, commissions.*, quotes.* | 接口 | /admin/orders, /admin/commissions
+需求说明：按职责提供列表、筛选、详情和可执行动作。
+界面与交互：列表支持状态、负责人、日期、逾期筛选；详情采用标签页；动作按钮根据权限和状态动态显示。
+业务规则：所有动作由后端返回allowed_actions，前端不得自行推断关键状态；批量操作限非财务低风险动作。
+验收标准：不同角色看到的字段和动作符合矩阵；非法状态转换返回409。
+
+P1-RBAC-001  用户、角色、权限与审计
+阶段 | 阶段一 | 角色 | Admin、Super Admin
+权限 | users.manage / roles.manage / audit.read | 接口 | /admin/users, /admin/roles, /admin/audit-logs
+需求说明：用户启停、角色分配、角色权限配置、审计查询。
+界面与交互：用户列表显示状态、角色、最近登录；角色编辑显示权限差异；审计页支持操作者、资源、动作、时间筛选。
+业务规则：Super Admin角色不可删除；管理员不能提升自己到Super Admin；权限变更撤销会话；审计日志业务上只读。
+验收标准：越权测试通过；权限变化立即生效；审计记录包含before/after摘要。
+
+P1-CMS-001  政策、FAQ与基础内容管理
+阶段 | 阶段一 | 角色 | Content、Admin
+权限 | content.write / content.publish | 接口 | /admin/content-pages
+需求说明：管理首页区块、FAQ、Care & Safety、Terms、Privacy、Shipping、Refund和Sustainability。
+界面与交互：支持草稿、预览、发布、版本和回滚；政策页显示生效日期。
+业务规则：法律/政策内容发布需Admin批准；订单接受时保存适用条款版本；不得删除已被订单引用的版本。
+验收标准：发布后前台可见；历史订单仍能读取原条款版本。
+
+6.4 阶段一数据与API最低范围
+模块 | 核心表 | 核心API
+认证RBAC | users, sessions, roles, permissions, user_roles, role_permissions, audit_logs | /auth/*, /me, /admin/users, /admin/roles
+目录库存 | categories, products, product_variants, product_images, inventory_items, inventory_movements | /public/products, /admin/products, /admin/inventory
+购物订单 | carts, cart_items, addresses, orders, order_items, payments, shipments | /cart, /orders, /admin/orders, /admin/payments
+Commission | commission_applications, commission_files, quotes, quote_items, commission_orders, milestones, milestone_history | /commissions, /quotes, /admin/commissions
+售后内容 | aftersales_cases, aftersales_files, content_pages, content_versions, email_outbox | /aftersales, /content, /admin/content
+
+6.5 阶段一端到端验收场景
+新客户注册→收邮件→验证→登录→购买现货→银行转账→财务确认→仓储发货→客户查看单号→发起售后→客服关闭。
+客户提交Commission→客服补充资料→报价→客户接受→订金确认→Maker分配→设计确认→制作/质检→尾款确认→发货→完成。
+Maker尝试确认付款被403；Support尝试编辑角色被403；Customer尝试访问他人订单返回404。
+并发购买最后一件库存时只有一个订单成功锁定；另一个得到库存不足提示。
+邮件服务短暂失败时业务事务仍成功，Outbox重试后邮件发送，且不会重复创建订单。
+
+7. 阶段二：运营、支付、物流与合规自动化
+阶段二目标在阶段一可运营闭环之上，替换主要人工步骤，加入在线支付、退款、物流、排期、维修、文化审核、隐私请求和更完整的运营控制。每项集成都必须保留人工兜底。建议周期8–10周。
+
+7.1 阶段二闭环清单
+闭环 | 自动化能力 | 失败兜底
+在线支付 | Stripe/PayPal Payment Intent、Webhook、收据、订金/尾款 | 银行转账和人工确认继续保留
+退款 | 申请→审批→网关退款→Webhook确认→订单/库存/通知 | 失败进入needs_manual_action
+物流 | 运费报价、创建标签、跟踪事件、异常提醒 | 人工承运商和单号
+排期/等待名单 | 名额、容量、订金超时、自动释放、Waitlist邀请 | 管理员手工调整
+售后维修 | 申请、RMA、寄回、维修、寄出、关闭 | 手工标签和线下退款
+文化审核 | 触发、资料、审核、条件、批准、发布限制 | 升级至外部顾问/暂缓
+隐私请求 | 身份验证、数据收集、导出、批准、交付、关闭 | Privacy Officer手工处理
+泄露响应 | 登记、评估、控制、通知决策、复盘 | 人工事件指挥
+
+7.2 详细功能需求
+P2-PAY-001  在线支付、Webhook与分阶段付款
+阶段 | 阶段二 | 角色 | 客户、Finance、Admin
+权限 | payments.create_own / payments.manage | 接口 | POST /payments/intents, POST /webhooks/payments
+需求说明：支持现货全额、Commission订金和尾款在线支付。
+界面与交互：结算页使用支付提供商托管组件；显示支付处理中、成功、失败、需要验证；客户中心显示付款计划和到期日。
+业务规则：服务端创建Payment Intent；客户端密钥不可决定订单状态；Webhook验签、去重、落库；金额/货币必须与服务端一致。
+验收标准：模拟成功/失败/重复Webhook均正确；成功只记账一次；失败可重试或切换银行转账。
+
+P2-REFUND-001  退款审批与执行闭环
+阶段 | 阶段二 | 角色 | Support、Finance、Admin
+权限 | refunds.request / approve / execute | 接口 | POST /refunds, /refunds/{id}/approve
+需求说明：售后建议退款后进入审批和执行。
+界面与交互：退款详情显示原支付、可退金额、原因、证据、申请人、审批人和网关结果；部分退款可输入金额。
+业务规则：职责分离：Support提出，Finance批准/执行；同一人不可同时申请和审批高额退款；网关失败保留待办。
+验收标准：退款成功后订单和付款状态一致，客户收到通知，审计包含金额和网关引用。
+
+P2-SHIP-001  运费报价、标签与物流跟踪
+阶段 | 阶段二 | 角色 | 客户、Warehouse、Support
+权限 | shipments.quote / create / manage | 接口 | /shipping/quotes, /admin/shipments, /webhooks/shipping
+需求说明：接入NZ Post/CourierPost/Aramex等可选服务。
+界面与交互：结算显示可选服务、价格和预计时间；后台一键创建标签、打印、取消；客户看到跟踪事件。
+业务规则：报价过期需重算；标签创建幂等；承运商不可用时切换人工；国际订单显示关税由谁承担。
+验收标准：创建标签后单号自动写入；Webhook重复不重复事件；异常状态产生客服任务。
+
+P2-CAP-001  Commission容量、名额与等待名单
+阶段 | 阶段二 | 角色 | Admin、Support、客户
+权限 | capacity.manage / waitlist.manage | 接口 | /commission-slots, /waitlist
+需求说明：按月/周定义Maker容量、开放名额和等待名单。
+界面与交互：后台日历/容量视图；前台显示开放窗口；Waitlist可登记偏好；收到邀请后在期限内提交/支付。
+业务规则：订金未在期限内支付自动释放名额；容量变更不得破坏已确认订单；邀请有唯一令牌和过期时间。
+验收标准：满额时无法直接排期；释放后可邀请下一位；所有调整有历史。
+
+P2-CHANGE-001  Commission变更单与追加费用
+阶段 | 阶段二 | 角色 | 客户、Support、Maker、Finance
+权限 | change_requests.create / approve_own / manage | 接口 | /commissions/{id}/change-requests
+需求说明：制作中超出原范围的修改通过Change Request处理。
+界面与交互：客户或Maker提出变更，显示描述、影响、追加金额、工期和附件；客户接受后生成追加付款。
+业务规则：未接受不得实施；变更版本化；可能触发重新文化审核；追加付款完成后才恢复制作。
+验收标准：接受/拒绝/过期状态正确，报价和时间线保留原版本。
+
+P2-AFTER-001  维修、替换、退货与RMA
+阶段 | 阶段二 | 角色 | 客户、Support、Warehouse、Maker、Finance
+权限 | aftersales.manage / rma.manage | 接口 | /aftersales/{id}/resolution, /rma
+需求说明：建立完整售后工单和返修物流。
+界面与交互：客户提交问题→客服分诊→批准方案→生成RMA→寄回→检查→维修/替换/退款→寄出→客户确认。
+业务规则：每种解决方案有SLA；商品状态和库存调整有流水；法定补救与商业保修分开显示。
+验收标准：工单可完整走到closed；每一步有责任人、时间和通知；退款与库存一致。
+
+P2-CULT-001  Māori文化敏感内容审核闭环
+阶段 | 阶段二 | 角色 | Cultural Reviewer、Admin、客户
+权限 | cultural_reviews.review / approve | 接口 | /admin/cultural-reviews
+需求说明：系统对特定词语、图样类型和客户声明触发人工审核。
+界面与交互：审核工作台展示最小必要客户信息、设计、来源、意义、许可、关联iwi/hapū和咨询记录；结论为不需要、批准、条件批准、需补充、拒绝。
+业务规则：自动筛查只做提醒；不得自动判定文化许可；涉及具体来源需证据；文化审核员与普通内容编辑权限分离。
+验收标准：触发内容未批准不能报价/发布；客户补充后可重新审核；结论和条件可追溯。
+
+P2-PRIV-001  隐私访问、更正与删除请求
+阶段 | 阶段二 | 角色 | 客户、Privacy Officer
+权限 | privacy_requests.create_own / manage | 接口 | /privacy-requests, /admin/privacy-requests
+需求说明：客户提交隐私请求，Privacy Officer验证身份并处理。
+界面与交互：前台选择访问/更正/删除/投诉；后台显示法定时限、数据来源、豁免理由、审批和安全下载。
+业务规则：导出只包含本人数据；删除受订单/税务/争议保留限制时应解释并执行最小化；文件下载短期有效。
+验收标准：请求从received到fulfilled/declined/closed；导出准确；所有查看和下载有审计。
+
+P2-BREACH-001  隐私泄露登记与响应
+阶段 | 阶段二 | 角色 | Privacy Officer、Admin
+权限 | breaches.manage | 接口 | /admin/privacy-breaches
+需求说明：记录发现、控制、影响评估、通知决定、受影响人和复盘。
+界面与交互：后台向导：发现→控制→评估→通知→补救→复盘；支持证据和任务分配。
+业务规则：严重伤害或可能严重伤害的事件需升级评估；系统提供72小时内部提醒但最终决定由Privacy Officer完成；不得自动向外部机构发送。
+验收标准：事件时间线完整、任务可追踪、通知决定和理由留存。
+
+P2-CMS-001  多语言内容与发布审批
+阶段 | 阶段二 | 角色 | Content、Cultural Reviewer、Admin
+权限 | content.translate / content.publish | 接口 | /admin/content-translations
+需求说明：支持英文、中文和经审核的te reo Māori内容。
+界面与交互：内容编辑器按语言标签；显示翻译状态、审核状态和预览；Māori内容进入文化/语言审核。
+业务规则：未翻译回退英文；不得机器直译后自动发布；政策内容发布需Admin批准。
+验收标准：切换语言后路由和SEO正确；长音符保留；未批准内容不可公开。
+
+P2-REPORT-001  运营、财务和合规报表
+阶段 | 阶段二 | 角色 | Admin、Finance、Privacy、Culture
+权限 | reports.read / reports.export | 接口 | /admin/reports/*
+需求说明：提供订单、收入、Commission漏斗、制作逾期、退款、文化审核和隐私SLA报表。
+界面与交互：Dashboard卡片+趋势图+可筛选表；导出CSV；不同角色只见相应数据。
+业务规则：报表来源定义明确；金额按订单快照；导出需要export权限并记录审计。
+验收标准：报表与抽样订单一致；无权限导出被拒绝；大导出异步生成。
+
+7.3 阶段二数据新增
+业务 | 新增表/字段
+支付退款 | payment_intents, payment_events, webhook_events, refunds, refund_approvals
+物流 | shipping_quotes, shipments扩展, tracking_events, shipping_labels
+容量等待 | capacity_slots, waitlist_entries, waitlist_invitations
+变更售后 | change_requests, change_request_items, rma_cases, rma_events
+文化 | cultural_reviews, cultural_review_evidence, cultural_review_history
+隐私 | privacy_requests, privacy_exports, breach_incidents, breach_tasks
+内容报表 | translations, content_approvals, report_exports, daily_metrics
+
+7.4 阶段二验收场景
+客户在线支付现货订单；支付页面关闭后Webhook仍能把订单改为paid；重复Webhook不重复记账。
+Support提出部分退款，Finance审批执行，支付网关成功后客户收到通知，订单显示partially_refunded。
+结算获得物流报价并创建标签；承运商API失败时仓储切换人工单号完成发货。
+Commission满额进入Waitlist，名额释放后邀请，客户在期限内支付订金锁定档期。
+包含Māori文化元素的申请自动进入人工文化审核，未经批准不能报价；批准条件显示在制作任务。
+客户提交个人信息访问请求，Privacy Officer验证、生成导出、交付并关闭；下载链接过期后不可访问。
+
+8. 阶段三：规模化、增长与智能运营
+阶段三目标提高转化率、产能利用率和经营决策能力，加入配置估价、材料采购、营销、国际化、预测和自动化。所有自动结果仍保留人工审批、解释和回退。建议周期10–14周。
+
+8.1 阶段三闭环清单
+闭环 | 起点 | 终点
+自助配置估价 | 客户选择模板和选项 | 生成可解释估价→人工确认→报价→付款
+材料采购 | 制作需求产生材料缺口 | 采购单→收货→库存→Commission领料→成本归集
+营销转化 | 客户合法同意 | 分群→活动→点击/下单→归因→退订
+优惠与推荐 | 创建规则 | 使用→校验→结算→核销→报表
+国际化 | 选择地区/货币/语言 | 价格展示→支付→税费/关税说明→物流
+产能预测 | 历史与当前任务 | 预测完工区间→风险提醒→重新排期
+数据闭环 | 埋点和业务数据 | 指标→洞察→运营动作→效果复盘
+
+8.2 详细功能需求
+P3-CONFIG-001  可视化配置器与可解释估价
+阶段 | 阶段三 | 角色 | 客户、Support、Maker、Admin
+权限 | configurator.use / pricing_rules.manage | 接口 | /configurator/templates, /estimates
+需求说明：客户基于模板选择颜色、耳型、眼型、功能和配件，获得估算价格和工期。
+界面与交互：桌面双栏：左侧预览，右侧分组配置；移动端步骤式；实时显示价格构成、兼容性警告和预计工期。
+业务规则：规则引擎只给Estimate，不形成最终承诺；每项价格和工期可解释；冲突组合被阻止；涉及文化元素触发审核。
+验收标准：相同配置在同一规则版本下结果一致；人工报价可引用估价并记录差异原因。
+
+P3-MAT-001  材料、供应商与采购闭环
+阶段 | 阶段三 | 角色 | Maker、Warehouse、Finance、Admin
+权限 | materials.manage / purchase_orders.approve | 接口 | /admin/materials, /admin/purchase-orders
+需求说明：Commission BOM产生需求，库存不足创建采购建议和采购单。
+界面与交互：材料列表显示颜色、批次、供应商、成本、可持续证据；采购单支持审批、下单、部分收货和关闭；Commission领料扫描/选择批次。
+业务规则：采购和收货职责分离；成本以批次保存；退货和报废有流水；可持续声明需附件证据。
+验收标准：材料缺口能生成采购单；收货增加库存；领料减少库存并归集到Commission成本。
+
+P3-CRM-001  营销同意、分群与活动闭环
+阶段 | 阶段三 | 角色 | Customer、Content、Admin
+权限 | marketing.manage / consent.manage_own | 接口 | /marketing/campaigns, /preferences
+需求说明：在合法同意基础上发送新品、Commission开放和活动消息。
+界面与交互：客户偏好中心可选择渠道和主题；后台创建分群、模板、测试发送、排期和结果；每封邮件含身份和退订。
+业务规则：营销同意与交易通知分开；退订即时生效；抑制列表不可被普通活动绕过；活动发送和点击留存最小必要数据。
+验收标准：未同意客户不进入营销名单；退订后不再收到营销邮件；交易邮件仍正常。
+
+P3-PROMO-001  优惠券、推荐与忠诚度
+阶段 | 阶段三 | 角色 | 客户、Admin、Finance
+权限 | promotions.use / promotions.manage | 接口 | /promotions/validate, /admin/promotions
+需求说明：支持固定/比例优惠、适用商品、最小金额、使用次数、推荐奖励。
+界面与交互：结算输入优惠码并实时解释；后台规则构建器显示冲突和预计影响；客户中心显示推荐链接和奖励状态。
+业务规则：优惠计算全部服务端完成；不可与不兼容优惠叠加；退款按实际支付金额分摊；防刷和自推荐限制。
+验收标准：边界条件、并发核销和退款后额度均正确；每次核销可追溯。
+
+P3-INTL-001  多币种、国际配送和本地化
+阶段 | 阶段三 | 角色 | 国际客户、Admin、Finance
+权限 | currency.read / exchange_rates.manage | 接口 | /currencies, /exchange-rates
+需求说明：支持NZD为账本货币，展示AUD/USD等参考或结算货币。
+界面与交互：页头货币/语言选择；商品显示币种；结算显示汇率时间、支付币种、关税与进口税提示。
+业务规则：订单保存结算币种、汇率和NZD基准快照；退款使用原支付币种；不得隐藏汇率/手续费。
+验收标准：跨币种订单、退款和报表可对账；切换币种不改变后台基准价格。
+
+P3-CAP-001  产能预测与风险预警
+阶段 | 阶段三 | 角色 | Maker、Admin、Support
+权限 | capacity.predict / capacity.override | 接口 | /admin/capacity/forecast
+需求说明：根据工时、材料、Maker产能和历史偏差预测完成区间。
+界面与交互：生产看板显示负载热力图、风险旗标、依赖和建议调整；客户仅看到经管理员确认的时间区间。
+业务规则：预测是辅助决策，不自动修改承诺；模型/规则版本和输入可追溯；异常可手工覆盖并填写原因。
+验收标准：逾期风险生成任务；人工确认后更新客户时间区间并通知。
+
+P3-DATA-001  高级分析与运营实验
+阶段 | 阶段三 | 角色 | Admin、Finance、Product
+权限 | analytics.read / analytics.export | 接口 | /admin/analytics
+需求说明：建立漏斗、渠道、复购、产能、毛利和售后质量指标。
+界面与交互：分析中心提供日期/渠道/地区/产品筛选；指标有定义说明；支持事件漏斗和导出。
+业务规则：分析数据与交易事实分离；个人级分析最小化和去标识；实验必须尊重营销/隐私同意。
+验收标准：关键指标可追溯到聚合数据；数据延迟和口径清晰；敏感导出受权限限制。
+
+P3-AUTO-001  工作流自动化与规则管理
+阶段 | 阶段三 | 角色 | Admin、Super Admin
+权限 | automation.manage | 接口 | /admin/workflows
+需求说明：配置低风险自动动作，如付款超时提醒、等待名单邀请、逾期升级。
+界面与交互：规则由触发器、条件、动作、启停、模拟和运行历史组成；高风险动作只能生成待审批任务。
+业务规则：支付、退款、文化结论、隐私通知和角色分配不得无人审批自动执行；规则版本化，可回滚。
+验收标准：模拟结果正确；失败有重试和死信；停用后不再触发；每次运行可审计。
+
+8.3 阶段三数据新增
+业务 | 新增表/字段
+配置估价 | config_templates, config_options, pricing_rules, rule_versions, estimates
+材料采购 | materials, material_batches, suppliers, bills_of_materials, purchase_orders, goods_receipts, material_allocations
+营销优惠 | marketing_consents, segments, campaigns, campaign_deliveries, coupons, redemptions, referrals, rewards
+国际化 | currencies, exchange_rates, locales, translation_keys
+预测分析 | capacity_models, forecasts, risk_alerts, analytics_events, metric_definitions, experiment_assignments
+自动化 | workflow_rules, workflow_versions, workflow_runs, dead_letter_jobs
+
+8.4 阶段三验收场景
+客户配置头套，系统解释每个选项的价格和工期影响，生成估价；客服转为正式报价并说明差异。
+Commission产生材料BOM，系统发现库存不足，生成采购单；收货入库、领料、成本归集完整。
+客户明确同意Commission开放通知，收到活动邮件后下单；退订后不再收到营销邮件。
+国际客户以USD支付，订单保存汇率快照，退款按原币种完成，财务报表可换算NZD。
+产能预测发现高风险订单，管理员调整排期并通知客户；系统保留预测和人工覆盖理由。
+
+9. 页面与路由总清单
+9.1 商城前台
+阶段 | 路由 | 页面 | 角色 | 主要内容
+P1 | / | Home | 游客/客户 | 品牌、现货、Commission状态、作品
+P1 | /shop | Shop | 游客/客户 | 列表、筛选、搜索
+P1 | /products/:slug | Product Detail | 游客/客户 | 图库、价格、库存、护理
+P1 | /cart | Cart | 客户 | 数量、费用摘要
+P1 | /checkout | Checkout | 客户 | 地址、配送、确认、付款说明
+P1 | /register /verify-email /login | Auth | 游客 | 注册、验证、登录、重置
+P1 | /commissions/new | Commission Wizard | 客户 | 六步申请和草稿
+P1 | /account/orders/:id | Order Detail | 客户 | 付款、物流、售后
+P1 | /account/commissions/:id | Commission Detail | 客户 | 报价、里程碑、确认、文件
+P1 | /account/aftersales/:id | After-sales | 客户 | 问题、沟通、结论
+P1 | /care /terms /privacy /shipping /refunds | Policies | 全部 | 政策和护理
+P2 | /waitlist | Commission Waitlist | 客户 | 等待名单和邀请
+P2 | /account/privacy | Privacy Requests | 客户 | 访问/更正/删除
+P2 | /account/preferences | Preferences | 客户 | 通知偏好和语言
+P2 | /account/returns/:id | RMA | 客户 | 返修物流和进度
+P3 | /configure/:template | Configurator | 客户 | 可视化配置与估价
+P3 | /rewards | Rewards | 客户 | 推荐和奖励
+P3 | /account/marketing | Marketing Preferences | 客户 | 营销同意和主题
+
+9.2 管理后台
+阶段 | 路由 | 页面 | 角色
+P1 | /login | 后台登录 | 全部后台角色
+P1 | /dashboard | Dashboard | 按权限
+P1 | /products /categories /inventory | 商品与库存 | Content/Admin/Warehouse
+P1 | /orders/:id | 订单详情 | Support/Warehouse/Finance/Admin
+P1 | /commissions/:id | Commission详情 | Support/Maker/Admin
+P1 | /quotes/:id | 报价编辑 | Support/Admin
+P1 | /production | 制作看板 | Maker/Admin
+P1 | /users /roles | 用户与RBAC | Admin/Super Admin
+P1 | /audit-logs | 审计 | Admin/Super Admin
+P1 | /content | 内容 | Content/Admin
+P2 | /payments /refunds | 支付退款 | Finance/Admin
+P2 | /shipping | 物流 | Warehouse/Support
+P2 | /capacity /waitlist | 排期等待 | Admin/Support
+P2 | /aftersales /rma | 售后返修 | Support/Maker/Warehouse/Finance
+P2 | /cultural-reviews | 文化审核 | Culture/Admin
+P2 | /privacy-requests /breaches | 隐私合规 | Privacy/Admin
+P2 | /reports | 报表 | 按权限
+P3 | /configurator /pricing-rules | 配置规则 | Admin/Maker
+P3 | /materials /suppliers /purchase-orders | 材料采购 | Maker/Warehouse/Finance
+P3 | /marketing /promotions | 营销优惠 | Content/Admin/Finance
+P3 | /analytics | 高级分析 | Admin/Finance
+P3 | /workflows | 自动化 | Admin/Super Admin
+
+
+10. API与事件清单
+10.1 API通用规范
+统一前缀/api/v1；公开/public；客户/me或业务资源；管理/admin。
+JSON响应：data、meta、error；错误包含code、message、field_errors、request_id。
+分页使用page/page_size或cursor；筛选字段白名单；排序字段白名单。
+创建付款、订单、退款、Webhook和关键状态变更支持Idempotency-Key。
+并发更新使用version/updated_at乐观锁，冲突返回409。
+文件上传使用预签名URL或受控Multipart；下载校验所有权和权限。
+10.2 阶段API分组
+分组 | 接口范围
+P1 Auth | POST /auth/register, /verify-email, /login, /refresh, /logout, /forgot-password, /reset-password
+P1 Catalog | GET /public/categories, /public/products, /public/products/:slug, /public/content/:slug
+P1 Cart/Order | GET/POST/PATCH /cart, POST /orders, GET /me/orders/:id, POST /orders/:id/cancel
+P1 Commission | POST /commissions, PATCH /commissions/:id, POST /submit, GET /me/commissions/:id, POST /quotes/:id/accept
+P1 Admin | /admin/products, /inventory, /orders, /payments, /commissions, /quotes, /users, /roles, /audit-logs, /content
+P2 Payments | POST /payments/intents; POST /webhooks/payment-provider; /admin/refunds
+P2 Shipping | POST /shipping/quotes; /admin/shipments; POST /webhooks/shipping-provider
+P2 Compliance | /waitlist, /aftersales, /rma, /privacy-requests, /admin/cultural-reviews, /admin/privacy-breaches
+P3 Scale | /configurator, /estimates, /admin/materials, /purchase-orders, /marketing, /promotions, /analytics, /workflows
+
+10.3 领域事件
+事件 | 触发后动作示例
+UserEmailVerified | 欢迎邮件、激活客户角色
+OrderCreated | 锁库存、创建付款到期任务、订单邮件
+PaymentSucceeded | 订单/Commission推进、收据、通知仓储/制作
+QuoteAccepted | 创建订金计划、保存条款快照
+CommissionMilestoneChanged | 客户通知、下一步任务
+ShipmentCreated | 发货邮件、物流跟踪订阅
+AfterSalesResolutionApproved | 退款/RMA/维修任务
+CulturalReviewDecided | 解除或阻止报价/发布
+PrivacyRequestFulfilled | 安全交付、关闭任务
+InventoryBelowThreshold | 阶段三采购建议
+
+
+11. 数据模型与迁移策略
+11.1 阶段一核心表关键字段
+表 | 关键字段/约束
+users | id, email, password_hash, status, email_verified_at, locale, timezone, permission_version, created_at
+sessions | id, user_id, refresh_token_hash, device, ip_hash, expires_at, revoked_at
+roles / permissions | code, name, system_flag；resource, action, scope
+user_roles / role_permissions | user_id, role_id；role_id, permission_id
+audit_logs | actor_id, action, resource_type, resource_id, before_json, after_json, request_id, created_at
+products | id, category_id, slug, status, name, description, price_cents, currency, gst_mode, care_text, safety_text, version
+inventory_items | variant_id, on_hand, reserved, available；不得只保存available
+orders | id, order_no, user_id, status, currency, subtotal, shipping, tax, total, terms_version, address_snapshot, version
+payments | id, order_id/commission_id, method, status, amount_cents, reference, confirmed_by, confirmed_at
+commission_applications | id, application_no, user_id, status, species, style, budget, measurements_json, options_json, cultural_trigger
+quotes | id, commission_id, version_no, status, subtotal, tax, total, deposit_amount, valid_until, terms_snapshot
+milestones | commission_order_id, code, status, sequence, requires_customer_approval, planned_at, completed_at
+content_pages | slug, locale, status, version, body, effective_at, approved_by
+
+11.2 数据完整性
+邮箱唯一且使用规范化值；业务编号唯一；所有外键建立索引。
+库存使用movement流水和事务；available = on_hand - reserved通过服务计算或一致性维护。
+金额字段为BIGINT cents，货币ISO代码；订单项保存商品名称、SKU、单价、税率快照。
+文化、隐私、退款和权限记录禁止物理删除；文件保存SHA-256用于完整性检查。
+软删除对象仍需排除公开查询；删除用户时按保留策略匿名化，不破坏财务和订单记录。
+11.3 数据库迁移
+采用版本化迁移工具；禁止生产环境AutoMigrate直接改变结构。
+每个迁移包含up/down或明确不可逆说明；大表变更先扩展后收缩。
+发布顺序遵守向后兼容：先数据库→后端兼容→前端→清理旧字段。
+生产迁移前自动备份和演练；失败可回滚应用版本。
+
+12. 安全、性能、可用性和运维要求
+12.1 安全要求
+领域 | 要求
+认证 | 安全Cookie/Token、CSRF策略、Refresh撤销、MFA、密码哈希、限流
+授权 | RBAC+资源所有权+状态机；默认拒绝；服务端allowed_actions
+输入 | DTO校验、SQL参数化、XSS转义、上传白名单/大小/病毒扫描
+文件 | 私有Bucket、签名URL、禁止可执行文件、元数据最小化
+支付 | 使用托管支付组件；不存PAN/CVV；Webhook验签和幂等
+秘密 | 环境变量/Secret Manager；禁止提交Git；定期轮换
+审计 | 高风险操作、权限、付款、退款、文化、隐私和导出完整记录
+依赖 | SCA、容器扫描、固定版本、定期补丁
+测试 | SAST、DAST、越权测试、状态机测试、Webhook重放测试
+
+12.2 性能与容量
+指标 | 阶段一 | 阶段二 | 阶段三
+API P95 | ≤500ms（不含第三方） | ≤350ms | ≤250ms核心读接口
+商品列表 | Redis缓存60–300秒 | 事件清缓存 | CDN+搜索服务可选
+并发 | 至少100并发用户 | 300 | 1000+按压测扩容
+上传 | 单文件默认20MB，总计100MB可配置 | 异步扫描 | 分片上传可选
+后台导出 | 小数据同步 | 大数据异步 | 分析仓库
+
+12.3 可用性、备份与监控
+健康检查分liveness/readiness；数据库、Redis、邮件和外部网关状态可观测。
+结构化日志包含request_id、user_id、resource和结果，不记录密码、Token和完整敏感内容。
+指标：错误率、延迟、登录失败、支付Webhook积压、邮件Outbox、库存异常、逾期Commission。
+阶段一每日备份，RPO≤24小时、RTO≤8小时；阶段二建议RPO≤4小时、RTO≤4小时；阶段三按业务升级。
+定期恢复演练；备份加密；测试环境不得使用真实客户数据。
+
+13. 新西兰法律、文化与无障碍要求
+合规边界以下是把官方指导转换为产品要求，不构成法律意见。正式上线前需要确认企业主体、GST状态、支付条款、实际数据托管位置和文化审核安排。
+
+13.1 Privacy Act 2020
+只收集与订单、制作、配送、售后和法定义务相关且必要的信息；每个表单说明收集目的。
+客户可以请求访问和更正个人信息；阶段二提供结构化请求和安全交付。
+个人信息采取合理安全措施；设置保留期限；不再需要时安全删除或匿名化。
+向新西兰境外服务商披露数据时记录供应商、目的、区域和合同/保护措施。
+建立隐私泄露响应；可能造成严重伤害的事件由Privacy Officer评估并按要求通知。
+13.2 Consumer Guarantees Act与Fair Trading Act
+商品和服务页面应准确描述质量、用途、材料、功能、价格、库存和预计时间。
+不能用“所有定制订单一律不退”排除适用的法定维修、更换、退款或其他补救。
+线上购买位置明确披露商家“in trade”身份、联系信息、费用、配送和条款。
+环保、可持续、手工、新西兰制造、交期和限量等声明必须有证据，不能误导。
+结算前显示完整价格，包括GST状态、运费和附加费用；避免预选附加服务。
+13.3 GST与财务记录
+系统设置包含gst_registered、gst_number、gst_rate和生效日期；订单保存税率快照。
+当业务达到或预计达到官方注册门槛时由经营者办理注册；系统不自动判断法律责任，只提供营业额提醒。
+发票/税务收据显示企业信息、订单、日期、金额、GST和币种；退款生成对应调整记录。
+13.4 反垃圾邮件
+交易邮件与营销邮件分开；营销必须有同意依据、发送者身份和可用退订。
+退订即时写入抑制列表；普通管理员不得绕过；同意记录保存来源、时间、文本版本。
+Commission开放提醒、促销和新品属于营销；订单确认、付款、制作和物流属于交易通知。
+13.5 Māori文化与知识产权
+使用Māori文字、图样或知识前进行文化意义、来源、许可、语境和可能冒犯性的尽职调查。
+涉及具体iwi/hapū、taonga、whakapapa、tā moko、whakairo、mātauranga或传统叙事时触发人工审核，并在需要时咨询合适专家或相关群体。
+系统不把自动关键词命中当作文化裁决，也不根据用户族裔判断许可。
+品牌商标包含Māori元素时建议在注册前使用IPONZ相关指导并寻求专业意见。
+13.6 无障碍与可持续性
+采用WCAG 2.2 AA作为产品目标，覆盖键盘、对比度、表单、焦点、替代文本、缩放和移动端重排。
+记录材料组成、维修能力、替换部件、包装和可回收说明；“可持续”等声明必须有证据。
+产品护理页说明通风、视野、高温、过敏、清洁和电子部件安全；不鼓励驾驶时佩戴。
+
+14. 测试策略、验收与Definition of Done
+14.1 测试层级
+层级 | 范围
+单元测试 | Service状态机、价格、税、权限Policy、库存、优惠、估价规则
+Repository测试 | MySQL真实容器；事务、锁、唯一约束、迁移
+API集成 | 认证、RBAC、资源所有权、幂等、错误码、文件权限
+前端组件 | 表单、状态、权限菜单、错误和无障碍
+E2E | 每阶段所有业务闭环；支付/邮件/物流使用沙箱或Mock
+安全 | 越权、IDOR、上传、XSS、CSRF、暴力登录、Webhook重放
+性能 | 商品列表、下单、后台列表、并发库存、批量导出
+恢复 | 备份恢复、第三方故障、Outbox重试、死信处理
+
+14.2 每阶段发布门槛
+门槛 | 要求
+功能 | 阶段定义的闭环全部通过E2E，不允许只完成Happy Path。
+权限 | 权限矩阵自动化测试通过；关键越权场景为阻断级。
+数据 | 迁移可执行、备份可恢复、金额/库存对账通过。
+安全 | 无已知Critical/High漏洞；秘密未泄露；上传和Webhook检查通过。
+UI/UX | 桌面/移动核心流程；空/错/加载/权限状态；WCAG抽查通过。
+运营 | 邮件模板、后台操作指南、人工兜底和异常SOP准备完成。
+合规 | 政策版本、隐私说明、退款流程、文化审核责任人和企业信息确认。
+监控 | 日志、错误告警、任务积压、支付/邮件/物流指标可见。
+
+14.3 Definition of Done
+需求ID、设计稿、API契约、数据库迁移、代码、测试和文档关联。
+代码评审完成；关键Service至少覆盖成功、拒绝、重复和并发场景。
+权限在后端校验且有自动测试，前端只是体现allowed_actions。
+日志不泄露敏感信息；审计记录可查询；错误有request_id。
+产品负责人、QA和相应业务角色完成验收；合规功能由对应负责人确认。
+
+15. 实施节奏、团队和上线门槛
+15.1 建议团队
+角色 | 建议投入
+产品负责人/业务分析 | 1
+UI/UX | 1
+Golang后端 | 2
+React前端 | 2（商城/后台可分工）
+QA | 1
+DevOps | 0.5
+业务运营/制作代表 | 兼职持续参与
+合规/文化顾问 | 按评审节点参与
+
+15.2 建议迭代
+阶段 | Sprint | 主要输出
+阶段一 | S0 | 基础仓库、CI、MySQL/Redis、认证、RBAC、审计、设计系统
+阶段一 | S1 | 商品/库存/内容、注册邮箱、商城浏览
+阶段一 | S2 | 购物车/订单/银行转账/后台订单
+阶段一 | S3 | Commission向导、审核、报价、订金
+阶段一 | S4 | 制作、尾款、发货、客户中心、售后
+阶段一 | S5 | E2E、安全、性能、数据迁移、上线准备
+阶段二 | S6–S7 | 在线支付/退款、物流
+阶段二 | S8 | 容量/Waitlist/变更单
+阶段二 | S9 | 售后RMA、文化审核
+阶段二 | S10 | 隐私、报表、多语言、上线
+阶段三 | S11–S12 | 配置器/估价
+阶段三 | S13 | 材料/采购
+阶段三 | S14 | 营销/优惠/国际化
+阶段三 | S15–S16 | 预测、分析、自动化、压测和上线
+
+15.3 环境与发布
+local：Docker Compose（MySQL root/password仅限本地）；Mailpit；本地对象存储可选。
+staging：与生产拓扑一致，使用沙箱支付/物流和独立数据；每次发布自动迁移和Smoke Test。
+production：非root数据库账号、Secret Manager、TLS、私有数据库、备份、WAF/限流和监控。
+商城与后台独立域名/部署；API使用CORS白名单；后台不允许被搜索引擎索引。
+采用灰度或蓝绿部署；数据库迁移向后兼容；支付/物流Webhook地址版本化。
+
+16. 风险、待决策项与变更控制
+16.1 上线前必须确认
+待决策 | 建议默认值 | 影响
+企业主体/NZBN/GST | 配置项，不在代码写死 | 发票、价格和政策
+Commission订金 | 30%，后台可配置 | 报价、退款和排期
+免费修改次数 | 设计阶段2次，超出走变更单 | 工期和争议
+付款渠道 | P1银行转账；P2 Stripe优先 | 结算和退款
+物流渠道 | P1人工；P2至少一个API | 运费和发货
+文化审核责任人 | 指定Cultural Reviewer和升级路径 | 含Māori元素的订单
+数据托管区域 | 优先澳新区域并记录境外披露 | 隐私政策和供应商
+保留期限 | 按数据类型配置并经专业复核 | 删除、税务和争议
+
+16.2 主要风险
+风险 | 控制措施
+功能范围膨胀 | 每阶段以闭环和发布门槛为边界；新增需求进入变更评审。
+小团队职责重叠 | 角色可由同一人持有，但高风险操作继续记录并在阶段二支持职责分离。
+支付/物流服务不稳定 | 人工兜底、幂等、重试、死信和状态对账。
+定制交期争议 | 使用区间、容量管理、延期原因、客户确认和历史记录。
+文化误用 | 人工审核、来源/许可证据、必要时咨询，不让自动系统裁决。
+隐私和文件泄露 | 最小权限、签名URL、审计、扫描、保留和泄露响应。
+库存超卖 | 事务锁/乐观锁、reservation、过期释放和对账任务。
+
+16.3 变更控制
+需求变更必须说明业务价值、影响阶段、数据/API/权限/测试和迁移影响。
+新增高风险操作必须同时新增权限代码、审计事件、拒绝测试和审批规则。
+状态机变更需要迁移现有数据并更新前后台allowed_actions。
+法律、税务或文化规则变化应作为配置/内容优先处理，必要时再改代码。
+
+附录A：权限目录（建议）
+资源 | 动作
+auth | login, logout, session.revoke, mfa.manage_own
+users | read, create, update, suspend, assign_roles, export
+roles | read, create, update, delete, assign, manage_permissions
+products | read, create, update, publish, archive
+inventory | read, adjust, reserve, release, export
+orders | read_own, read, create, update, cancel, complete, export
+payments | read_own, read, create, confirm, reconcile
+refunds | request, approve, execute, read
+commissions | create_own, read_own, read_assigned, read, review, assign, update
+quotes | read_own, create, send, accept_own, expire
+milestones | read_own, read_assigned, update_assigned, approve_own
+shipping | quote, create, update, cancel, read_own
+aftersales | create_own, read_own, triage, resolve, close
+cultural_reviews | read, request_info, approve, reject
+privacy_requests | create_own, read_own, manage, export
+breaches | create, manage, close
+content | read, create, update, translate, approve, publish, rollback
+reports | read, export
+settings | read, update_business, update_security
+audit | read, export
+automation | read, simulate, manage, approve_run
+
+附录B：关键状态流转矩阵
+对象 | 允许流转示例 | 禁止示例
+Order | awaiting_payment→paid→processing→ready_to_ship→shipped→delivered→completed | awaiting_payment直接shipped
+Payment | pending→succeeded；succeeded→partially_refunded/refunded | failed直接refunded
+Quote | draft→sent→accepted/expired/rejected；sent→superseded | accepted后编辑原版本
+Commission | submitted→needs_info/screening→quoted→scheduled→production→completed | 未订金直接scheduled
+Cultural Review | pending→needs_context→approved/conditional/rejected | 系统自动approved
+Privacy Request | received→identity_verification→in_review→fulfilled/declined→closed | 未验证身份直接导出
+
+附录C：通知模板清单
+阶段 | 模板
+P1 | 验证邮箱、重置密码、注册成功
+P1 | 订单创建、付款说明、付款确认、发货、签收
+P1 | Commission提交、补充资料、报价、接受、订金、阶段更新、尾款、发货
+P1 | 售后创建、回复、解决、关闭
+P2 | 支付失败/成功、退款申请/结果、物流异常、Waitlist邀请/到期
+P2 | 文化审核补充/结果、隐私请求收到/交付、泄露通知模板
+P3 | 营销活动、Commission开放、优惠、推荐奖励、材料/产能内部提醒
+
+附录D：官方参考资料
+• Office of the Privacy Commissioner — Privacy Act 2020 / Privacy Principles：https://www.privacy.org.nz/privacy-principles/
+• Office of the Privacy Commissioner — Privacy breaches：https://www.privacy.org.nz/responsibilities/privacy-breaches/
+• Consumer Protection — Consumer Guarantees Act：https://www.consumerprotection.govt.nz/general-help/consumer-laws/consumer-guarantees-act
+• Commerce Commission — Selling online：https://www.comcom.govt.nz/business/dealing-with-typical-situations/selling-goods-and-services/selling-online/
+• Commerce Commission — Being in trade：https://www.comcom.govt.nz/business/your-obligations-as-a-business/what-is-being-in-trade/
+• Inland Revenue — Registering for GST：https://www.ird.govt.nz/gst/registering-for-gst
+• Department of Internal Affairs — Anti-spam law for businesses：https://www.dia.govt.nz/Spam-NZ-Spam-Law-for-Businesses
+• IPONZ — Māori culture and intellectual property：https://www.iponz.govt.nz/get-ip/maori-ip/maori-culture-and-intellectual-property/
+• IPONZ — Māori advisory committee and Māori trade marks：https://www.iponz.govt.nz/get-ip/trade-marks/practice-guidelines/current/maori-advisory-committee-and-maori-trade-marks/
+• NZ Digital government — Web Accessibility Standard 1.2：https://www.digital.govt.nz/standards-and-guidance/nz-government-web-standards/web-accessibility-standard-1-2
+
+附录E：业务原型参考图
+以下原型用于理解业务范围和视觉方向；最终界面应以本文件的阶段、权限、状态和验收要求为准。
+
+— 文档结束 —
